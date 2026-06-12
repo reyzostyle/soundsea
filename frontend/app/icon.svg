@@ -5,24 +5,28 @@
       <stop offset="1" stop-color="#2563eb"/>
     </linearGradient>
     <path id="s" d="M58,-88 C8,-110 -52,-86 -52,-44 C-52,-2 58,0 58,44 C58,88 0,108 -50,86"
-          fill="none" stroke-width="46" stroke-linecap="round"/>
+          fill="none" stroke-width="44" stroke-linecap="round"/>
   </defs>
 
   <rect width="512" height="512" rx="118" fill="url(#bg)"/>
 
-  <!-- soft shadow under the letters -->
+  <!-- soft shadow -->
   <g stroke="#0b3aa5" opacity="0.22">
     <use href="#s" transform="translate(174,324) rotate(-14)"/>
     <use href="#s" transform="translate(352,210) rotate(-14)"/>
+    <ellipse cx="132.5" cy="417.2" rx="40" ry="30" fill="#0b3aa5" stroke="none" transform="rotate(-25 132.5 417.2)"/>
     <ellipse cx="310.5" cy="303.2" rx="40" ry="30" fill="#0b3aa5" stroke="none" transform="rotate(-25 310.5 303.2)"/>
   </g>
 
-  <!-- two S letters flowing like a wave -->
-  <g stroke="#ffffff">
-    <use href="#s" transform="translate(174,312) rotate(-14)" opacity="0.88"/>
-    <use href="#s" transform="translate(352,198) rotate(-14)"/>
+  <!-- left S with note head (one group so opacity has no seams) -->
+  <g opacity="0.88">
+    <use href="#s" stroke="#ffffff" transform="translate(174,312) rotate(-14)"/>
+    <ellipse cx="132.5" cy="405.2" rx="40" ry="30" fill="#ffffff" transform="rotate(-25 132.5 405.2)"/>
   </g>
 
-  <!-- note head on the tail of the second S -->
-  <ellipse cx="310.5" cy="291.2" rx="40" ry="30" fill="#ffffff" transform="rotate(-25 310.5 291.2)"/>
+  <!-- right S with note head -->
+  <g>
+    <use href="#s" stroke="#ffffff" transform="translate(352,198) rotate(-14)"/>
+    <ellipse cx="310.5" cy="291.2" rx="40" ry="30" fill="#ffffff" transform="rotate(-25 310.5 291.2)"/>
+  </g>
 </svg>
