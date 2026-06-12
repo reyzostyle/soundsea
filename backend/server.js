@@ -58,6 +58,8 @@ app.post("/api/download", (req, res) => {
   const args = [
     "-x",
     "--audio-format", "mp3",
+    "--audio-quality", "0",
+    "--format", "bestaudio/best",
     "--no-playlist",
     "-j",
     "--no-simulate",
