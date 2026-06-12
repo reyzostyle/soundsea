@@ -1,0 +1,119 @@
+"use client";
+
+import { CSSProperties } from "react";
+import { RepeatMode, Track } from "@/lib/types";
+import { formatTime } from "@/lib/format";
+import { MusicIcon, NextIcon, PauseIcon, PlayIcon, PrevIcon, RepeatIcon } from "./Icons";
+
+type Props = {
+  track: Track | null;
+  isPlaying: boolean;
+  position: number;
+  duration: number;
+  repeat: RepeatMode;
+  onTogglePlay: () => void;
+  onPrev: () => void;
+  onNext: () => void;
+  onSeek: (seconds: number) => void;
+  onCycleRepeat: () => void;
+};
+
+const repeatLabel: Record<RepeatMode, string> = {
+  off: "Repeat: off",
+  all: "Repeat: playlist",
+  one: "Repeat: one track",
+};
+
+export default function PlayerBar({
+  track,
+  isPlaying,
+  position,
+  duration,
+  repeat,
+  onTogglePlay,
+  onPrev,
+  onNext,
+  onSeek,
+  onCycleRepeat,
+}: Props) {
+  const total = duration || track?.duration || 0;
+  const pct = total ? Math.min(100, (position / total) * 100) : 0;
+
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-800 bg-slate-950/95 backdrop-blur">
+      <div className="mx-auto flex max-w-6xl flex-col gap-1.5 px-4 py-3 md:px-8">
+        <div className="flex items-center gap-3">
+          {track?.thumbnail ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={track.thumbnail} alt="" className="h-11 w-11 shrink-0 rounded-md object-cover" />
+          ) : (
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-slate-800">
+              <MusicIcon className="h-5 w-5 text-slate-600" />
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium">{track ? track.title : "Nothing playing"}</p>
+            {!track && <p className="truncate text-xs text-slate-500">Download a track to get started</p>}
+          </div>
+          <div className="flex items-center gap-1 sm:gap-2">
+            <button
+              onClick={onPrev}
+              disabled={!track}
+              className="rounded-full p-2 text-slate-300 enabled:hover:text-white disabled:opacity-40"
+              aria-label="Previous track"
+            >
+              <PrevIcon />
+            </button>
+            <button
+              onClick={onTogglePlay}
+              disabled={!track}
+              className="rounded-full bg-white p-2.5 text-slate-950 transition enabled:hover:scale-105 disabled:opacity-40"
+              aria-label={isPlaying ? "Pause" : "Play"}
+            >
+              {isPlaying ? <PauseIcon /> : <PlayIcon />}
+            </button>
+            <button
+              onClick={onNext}
+              disabled={!track}
+              className="rounded-full p-2 text-slate-300 enabled:hover:text-white disabled:opacity-40"
+              aria-label="Next track"
+            >
+              <NextIcon />
+            </button>
+            <button
+              onClick={onCycleRepeat}
+              title={repeatLabel[repeat]}
+              aria-label={repeatLabel[repeat]}
+              className={`relative rounded-full p-2 ${
+                repeat === "off" ? "text-slate-500 hover:text-slate-300" : "text-cyan-400"
+              }`}
+            >
+              <RepeatIcon className="h-5 w-5" />
+              {repeat === "one" && (
+                <span className="absolute -top-0.5 -right-0.5 rounded-full bg-cyan-500 px-1 text-[9px] leading-3 font-bold text-slate-950">
+                  1
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 text-[11px] text-slate-500 tabular-nums">
+          <span className="w-10 text-right">{formatTime(position)}</span>
+          <input
+            type="range"
+            min={0}
+            max={total || 1}
+            step={0.1}
+            value={Math.min(position, total || 0)}
+            onChange={(e) => onSeek(Number(e.target.value))}
+            disabled={!track}
+            className="h-4 min-w-0 flex-1 disabled:opacity-40"
+            style={{ "--fill": `${pct}%` } as CSSProperties}
+            aria-label="Seek"
+          />
+          <span className="w-10">{formatTime(total || null)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}

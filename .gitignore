@@ -1,0 +1,6 @@
+node_modules/
+.next/
+.env.local
+backend/public/downloads/
+*.log
+.DS_Store
