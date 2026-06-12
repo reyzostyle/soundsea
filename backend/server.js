@@ -61,6 +61,7 @@ app.post("/api/download", (req, res) => {
     "--audio-quality", "0",
     "--format", "bestaudio/best",
     "--no-playlist",
+    "--extractor-args", "youtube:player_client=ios,android",
     "-j",
     "--no-simulate",
     "-o", path.join(DOWNLOADS_DIR, `${id}.%(ext)s`),
