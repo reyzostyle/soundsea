@@ -7,8 +7,19 @@ const crypto = require("crypto");
 const PORT = process.env.PORT || 4000;
 const DOWNLOADS_DIR = path.join(__dirname, "public", "downloads");
 const DOWNLOAD_TIMEOUT_MS = 10 * 60 * 1000;
+const COOKIES_FILE = path.join("/tmp", "yt-cookies.txt");
 
 fs.mkdirSync(DOWNLOADS_DIR, { recursive: true });
+
+// Write YouTube cookies from env var to a temp file so yt-dlp can use them
+if (process.env.YOUTUBE_COOKIES) {
+  try {
+    fs.writeFileSync(COOKIES_FILE, process.env.YOUTUBE_COOKIES, "utf8");
+    console.log("YouTube cookies loaded from env.");
+  } catch (e) {
+    console.warn("Failed to write cookies file:", e.message);
+  }
+}
 
 const app = express();
 app.use(express.json());
@@ -48,12 +59,16 @@ app.post("/api/download", (req, res) => {
     "-x",
     "--audio-format", "mp3",
     "--no-playlist",
-    // -j alone only simulates; with --no-simulate it downloads AND prints metadata JSON
     "-j",
     "--no-simulate",
     "-o", path.join(DOWNLOADS_DIR, `${id}.%(ext)s`),
-    url,
   ];
+
+  if (fs.existsSync(COOKIES_FILE)) {
+    args.push("--cookies", COOKIES_FILE);
+  }
+
+  args.push(url);
 
   const proc = spawn("yt-dlp", args);
   let stdout = "";
