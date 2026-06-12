@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22d3ee"/>
+      <stop offset="1" stop-color="#2563eb"/>
+    </linearGradient>
+    <path id="s" d="M58,-88 C8,-110 -52,-86 -52,-44 C-52,-2 58,0 58,44 C58,88 0,108 -50,86"
+          fill="none" stroke-width="46" stroke-linecap="round"/>
+  </defs>
+
+  <rect width="512" height="512" rx="118" fill="url(#bg)"/>
+
+  <!-- soft shadow under the letters -->
+  <g stroke="#0b3aa5" opacity="0.22">
+    <use href="#s" transform="translate(174,324) rotate(-14)"/>
+    <use href="#s" transform="translate(352,210) rotate(-14)"/>
+    <ellipse cx="310.5" cy="303.2" rx="40" ry="30" fill="#0b3aa5" stroke="none" transform="rotate(-25 310.5 303.2)"/>
+  </g>
+
+  <!-- two S letters flowing like a wave -->
+  <g stroke="#ffffff">
+    <use href="#s" transform="translate(174,312) rotate(-14)" opacity="0.88"/>
+    <use href="#s" transform="translate(352,198) rotate(-14)"/>
+  </g>
+
+  <!-- note head on the tail of the second S -->
+  <ellipse cx="310.5" cy="291.2" rx="40" ry="30" fill="#ffffff" transform="rotate(-25 310.5 291.2)"/>
+</svg>
