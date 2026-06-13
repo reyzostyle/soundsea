@@ -127,46 +127,16 @@ app.post("/api/download", (req, res) => {
   });
 });
 
-// Temporary diagnostics: yt-dlp version, PO token provider status, cookies, verbose extract
+// Lightweight health check: is the PO token provider reachable?
 app.get("/api/health", async (req, res) => {
-  const result = { cookiesFile: fs.existsSync(COOKIES_FILE) };
-
-  result.ytdlpVersion = await new Promise((resolve) => {
-    const p = spawn("yt-dlp", ["--version"]);
-    let out = "";
-    p.stdout.on("data", (c) => (out += c));
-    p.on("close", () => resolve(out.trim()));
-    p.on("error", (e) => resolve(`error: ${e.message}`));
-  });
-
+  let potProvider;
   try {
     const r = await fetch("http://127.0.0.1:4416/ping");
-    result.potProvider = await r.json();
+    potProvider = await r.json();
   } catch (e) {
-    result.potProvider = `unreachable: ${e.message}`;
+    potProvider = `unreachable: ${e.message}`;
   }
-
-  if (req.query.test) {
-    // flexible probe: ?test=1&cookies=1&client=tv&datasync=XXX&url=...
-    const args = ["-v", "-j", "--simulate", "--format", "bestaudio/best", "--no-playlist", "--remote-components", "ejs:github"];
-    if (req.query.cookies === "1" && fs.existsSync(COOKIES_FILE)) args.push("--cookies", COOKIES_FILE);
-    const ea = [];
-    if (req.query.client) ea.push(`player_client=${req.query.client}`);
-    if (req.query.datasync) ea.push(`data_sync_id=${req.query.datasync}`);
-    if (ea.length) args.push("--extractor-args", `youtube:${ea.join(";")}`);
-    args.push(req.query.url ? String(req.query.url) : "https://youtu.be/l_M4-tVgLSU");
-    result.args = args;
-    result.verboseTail = await new Promise((resolve) => {
-      const p = spawn("yt-dlp", args);
-      let err = "";
-      p.stderr.on("data", (c) => (err += c));
-      p.on("close", () => resolve(err.split("\n").slice(-50)));
-      p.on("error", (e) => resolve([`error: ${e.message}`]));
-      setTimeout(() => p.kill("SIGKILL"), 90000);
-    });
-  }
-
-  res.json(result);
+  res.json({ ok: true, cookiesFile: fs.existsSync(COOKIES_FILE), potProvider });
 });
 
 app.get("/api/audio/:filename", (req, res) => {
