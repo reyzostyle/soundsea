@@ -61,14 +61,17 @@ app.post("/api/download", (req, res) => {
     "--audio-quality", "0",
     "--format", "bestaudio/best",
     "--no-playlist",
-    "--extractor-args", "youtube:player_client=ios,android",
     "-j",
     "--no-simulate",
     "-o", path.join(DOWNLOADS_DIR, `${id}.%(ext)s`),
   ];
 
   if (fs.existsSync(COOKIES_FILE)) {
+    // web clients support cookies; ios/android would be skipped and leave no formats
     args.push("--cookies", COOKIES_FILE);
+  } else {
+    // without cookies the ios/android clients dodge most bot checks
+    args.push("--extractor-args", "youtube:player_client=ios,android");
   }
 
   args.push(url);
