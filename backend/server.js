@@ -61,6 +61,9 @@ app.post("/api/download", (req, res) => {
     "--audio-quality", "0",
     "--format", "bestaudio/best",
     "--no-playlist",
+    // normalize loudness to -14 LUFS (the Spotify/YouTube standard) so tracks
+    // don't jump in volume between each other
+    "--postprocessor-args", "ffmpeg:-af loudnorm=I=-14:TP=-1.5:LRA=11",
     // download the EJS solver scripts so deno can solve the "n" signature
     // challenge — without it YouTube format URLs stay encrypted and only
     // thumbnail images are returned
