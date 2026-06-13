@@ -54,6 +54,15 @@ app.post("/api/download", (req, res) => {
     return res.status(400).json({ error: "Please provide a valid YouTube or TikTok URL." });
   }
 
+  // TikTok "sound"/music pages are a catalog of videos, not a single audio file,
+  // and yt-dlp's tiktok:sound extractor is currently broken upstream. Give a clear
+  // hint instead of a confusing yt-dlp error.
+  if (/(^|\.)tiktok\.com$/i.test(new URL(url).hostname) && /^\/music\//i.test(new URL(url).pathname)) {
+    return res.status(400).json({
+      error: "TikTok music links aren't supported. Paste a link to a specific video instead.",
+    });
+  }
+
   const id = crypto.randomBytes(8).toString("hex");
   const args = [
     "-x",
