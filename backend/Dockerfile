@@ -1,6 +1,10 @@
-FROM node:20-alpine
+# Debian instead of Alpine: the PO token provider depends on the native "canvas"
+# module, which only ships prebuilt binaries for glibc
+FROM node:20-slim
 
-RUN apk add --no-cache ffmpeg python3 py3-pip git
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ffmpeg python3 python3-pip git ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 
 # Bump the date below to force a fresh yt-dlp install (busts Docker layer cache)
 ENV YTDLP_REFRESH=2026-06-13
