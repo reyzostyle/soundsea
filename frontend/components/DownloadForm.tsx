@@ -27,18 +27,18 @@ export default function DownloadForm({ downloading, error, onDownload }: Props) 
           type="url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="Paste a YouTube or TikTok link…"
+          placeholder="Paste a YouTube or TikTok link"
           disabled={downloading}
-          className="min-w-0 flex-1 rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm outline-none transition-colors placeholder:text-slate-600 focus:border-cyan-500 disabled:opacity-60"
+          className="min-w-0 flex-1 rounded-md border border-line bg-panel px-4 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-muted/70 focus:border-accent disabled:opacity-60"
         />
         <button
           type="submit"
           disabled={downloading || !url.trim()}
-          className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-5 py-3 text-sm font-semibold text-white transition enabled:hover:from-cyan-400 enabled:hover:to-blue-500 disabled:opacity-50"
+          className="flex items-center justify-center gap-2 rounded-md bg-brand px-5 py-2.5 text-sm font-semibold text-white transition-colors enabled:hover:bg-brand-hover disabled:opacity-50"
         >
           {downloading ? (
             <>
-              <Spinner className="h-4 w-4" /> Downloading…
+              <Spinner className="h-4 w-4" /> Downloading
             </>
           ) : (
             <>
@@ -47,7 +47,7 @@ export default function DownloadForm({ downloading, error, onDownload }: Props) 
           )}
         </button>
       </div>
-      {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
+      {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
     </form>
   );
 }

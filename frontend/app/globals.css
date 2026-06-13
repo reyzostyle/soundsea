@@ -1,16 +1,56 @@
 @import "tailwindcss";
 
-:root {
-  color-scheme: dark;
+/*
+  Semantic color tokens. The active set is chosen by [data-theme] on <html>,
+  so every "bg-panel", "text-ink", "border-line" utility re-themes at runtime.
+*/
+:root,
+[data-theme="light"] {
+  --c-base: #f6f7f9;
+  --c-panel: #ffffff;
+  --c-elevated: #eceef2;
+  --c-line: #e1e5ea;
+  --c-ink: #161a20;
+  --c-muted: #6a7280;
+  --c-accent: #0e7490;
+  --c-accent-soft: rgba(14, 116, 144, 0.12);
 }
 
-/* subtle "deep sea" glow at the top; background-color comes from the bg-slate-950 utility */
+[data-theme="dark"] {
+  /* dark gray, not pure black */
+  --c-base: #181b21;
+  --c-panel: #21252d;
+  --c-elevated: #2b303a;
+  --c-line: #363c47;
+  --c-ink: #e7eaef;
+  --c-muted: #98a1ae;
+  --c-accent: #2fd0e6;
+  --c-accent-soft: rgba(47, 208, 230, 0.14);
+}
+
+@theme inline {
+  --color-base: var(--c-base);
+  --color-panel: var(--c-panel);
+  --color-elevated: var(--c-elevated);
+  --color-line: var(--c-line);
+  --color-ink: var(--c-ink);
+  --color-muted: var(--c-muted);
+  --color-accent: var(--c-accent);
+  --color-accent-soft: var(--c-accent-soft);
+  /* primary button color, fixed across themes for consistent contrast */
+  --color-brand: #0e7490;
+  --color-brand-hover: #0b5e75;
+
+  --radius-md: 6px;
+  --radius-lg: 8px;
+}
+
 body {
-  background-image: radial-gradient(1100px 500px at 50% -100px, rgba(34, 211, 238, 0.07), transparent 70%);
-  background-attachment: fixed;
+  background-color: var(--c-base);
+  color: var(--c-ink);
 }
 
-/* Seek bar — the filled portion is driven by the --fill CSS variable set inline */
+/* Seek bar: the filled portion is driven by the --fill CSS variable set inline */
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
@@ -22,8 +62,8 @@ input[type="range"]:disabled {
 }
 input[type="range"]::-webkit-slider-runnable-track {
   height: 4px;
-  border-radius: 9999px;
-  background: linear-gradient(to right, #22d3ee var(--fill, 0%), #334155 var(--fill, 0%));
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--c-accent) var(--fill, 0%), var(--c-elevated) var(--fill, 0%));
 }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -32,22 +72,22 @@ input[type="range"]::-webkit-slider-thumb {
   height: 12px;
   width: 12px;
   border-radius: 9999px;
-  background: #fff;
+  background: var(--c-accent);
 }
 input[type="range"]::-moz-range-track {
   height: 4px;
-  border-radius: 9999px;
-  background: #334155;
+  border-radius: 2px;
+  background: var(--c-elevated);
 }
 input[type="range"]::-moz-range-progress {
   height: 4px;
-  border-radius: 9999px;
-  background: #22d3ee;
+  border-radius: 2px;
+  background: var(--c-accent);
 }
 input[type="range"]::-moz-range-thumb {
   height: 12px;
   width: 12px;
   border: none;
   border-radius: 9999px;
-  background: #fff;
+  background: var(--c-accent);
 }

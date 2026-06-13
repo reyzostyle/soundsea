@@ -8,7 +8,8 @@ import DownloadForm from "@/components/DownloadForm";
 import Sidebar from "@/components/Sidebar";
 import TrackList from "@/components/TrackList";
 import PlayerBar from "@/components/PlayerBar";
-import { MenuIcon, WaveIcon } from "@/components/Icons";
+import SettingsPanel from "@/components/SettingsPanel";
+import { MenuIcon } from "@/components/Icons";
 
 export default function Home() {
   const [hydrated, setHydrated] = useState(false);
@@ -228,16 +229,11 @@ export default function Home() {
 
   return (
     <div className="min-h-dvh">
-      <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-slate-800 bg-slate-950/90 px-4 py-3 backdrop-blur md:hidden">
-        <button onClick={() => setSidebarOpen(true)} aria-label="Open playlists" className="p-1 text-slate-300">
+      <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-line bg-panel/90 px-4 py-3 backdrop-blur md:hidden">
+        <button onClick={() => setSidebarOpen(true)} aria-label="Open menu" className="p-1 text-muted hover:text-ink">
           <MenuIcon />
         </button>
-        <span className="flex items-center gap-2 font-bold tracking-tight">
-          <WaveIcon className="h-5 w-5 text-cyan-400" />
-          <span>
-            Sound<span className="text-cyan-400">Sea</span>
-          </span>
-        </span>
+        <span className="font-semibold tracking-tight">SoundSea</span>
       </header>
 
       <div className="mx-auto flex max-w-6xl">
@@ -254,31 +250,41 @@ export default function Home() {
         />
 
         <main className="min-w-0 flex-1 px-4 pt-6 pb-44 md:px-8 md:pt-10">
-          <DownloadForm downloading={downloading} error={downloadError} onDownload={handleDownload} />
+          {view === "settings" ? (
+            <SettingsPanel />
+          ) : (
+            <>
+              <DownloadForm downloading={downloading} error={downloadError} onDownload={handleDownload} />
 
-          <div className="mb-4 flex items-baseline justify-between gap-3">
-            <h1 className="truncate text-xl font-bold">{viewPlaylist ? viewPlaylist.name : "Library"}</h1>
-            <span className="shrink-0 text-sm text-slate-500">
-              {viewTracks.length} {viewTracks.length === 1 ? "track" : "tracks"}
-            </span>
-          </div>
+              <div className="mb-4 flex items-baseline justify-between gap-3">
+                <h1 className="truncate text-xl font-semibold tracking-tight">
+                  {viewPlaylist ? viewPlaylist.name : "Library"}
+                </h1>
+                <span className="shrink-0 text-sm text-muted">
+                  {viewTracks.length} {viewTracks.length === 1 ? "track" : "tracks"}
+                </span>
+              </div>
 
-          <TrackList
-            tracks={viewTracks}
-            emptyHint={
-              viewPlaylist
-                ? "This playlist is empty. Add tracks from your library with the + button on any track."
-                : "Paste a YouTube or TikTok link above to download your first track."
-            }
-            currentId={currentId}
-            isPlaying={isPlaying}
-            playlists={playlists}
-            isPlaylistView={!!viewPlaylist}
-            onPlay={(trackId) => playTrack(trackId, view)}
-            onTogglePlay={togglePlay}
-            onAddToPlaylist={addToPlaylist}
-            onRemove={(trackId) => (viewPlaylist ? removeFromPlaylist(viewPlaylist.id, trackId) : deleteTrack(trackId))}
-          />
+              <TrackList
+                tracks={viewTracks}
+                emptyHint={
+                  viewPlaylist
+                    ? "This playlist is empty. Add tracks from your library with the + button on any track."
+                    : "Paste a YouTube or TikTok link above to download your first track."
+                }
+                currentId={currentId}
+                isPlaying={isPlaying}
+                playlists={playlists}
+                isPlaylistView={!!viewPlaylist}
+                onPlay={(trackId) => playTrack(trackId, view)}
+                onTogglePlay={togglePlay}
+                onAddToPlaylist={addToPlaylist}
+                onRemove={(trackId) =>
+                  viewPlaylist ? removeFromPlaylist(viewPlaylist.id, trackId) : deleteTrack(trackId)
+                }
+              />
+            </>
+          )}
         </main>
       </div>
 

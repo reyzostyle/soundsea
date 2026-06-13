@@ -19,7 +19,7 @@ type AuthValue = {
 const AuthContext = createContext<AuthValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  // If Supabase isn't configured, there's nothing to restore — we're "ready" immediately.
+  // If Supabase isn't configured, there's nothing to restore; we're "ready" immediately.
   const [ready, setReady] = useState(!isSupabaseConfigured);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);

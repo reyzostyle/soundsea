@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { Playlist } from "@/lib/types";
-import { MusicIcon, PencilIcon, PlusIcon, TrashIcon, WaveIcon, XIcon } from "./Icons";
-import AuthButton from "./AuthButton";
+import { MusicIcon, PencilIcon, PlusIcon, SettingsIcon, TrashIcon, XIcon } from "./Icons";
 
 type Props = {
   playlists: Playlist[];
@@ -45,44 +44,43 @@ export default function Sidebar({
   };
 
   const itemClass = (active: boolean) =>
-    `flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-      active ? "bg-slate-800 text-white" : "text-slate-400 hover:bg-slate-900 hover:text-slate-200"
+    `flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm transition-colors ${
+      active ? "bg-elevated text-ink" : "text-muted hover:bg-elevated/60 hover:text-ink"
     }`;
+
+  const inputClass =
+    "w-full rounded-md border border-line bg-base px-2.5 py-1.5 text-sm text-ink outline-none placeholder:text-muted/70 focus:border-accent";
 
   return (
     <>
-      {open && <div className="fixed inset-0 z-40 bg-black/60 md:hidden" onClick={onClose} />}
+      {open && <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={onClose} />}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col gap-1 overflow-y-auto border-r border-slate-800 bg-slate-950 p-4 pb-32 transition-transform md:sticky md:top-0 md:z-auto md:h-dvh md:w-60 md:shrink-0 md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col gap-1 overflow-y-auto border-r border-line bg-panel p-3 pb-32 transition-transform md:sticky md:top-0 md:z-auto md:h-dvh md:w-60 md:shrink-0 md:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="mb-3 flex items-center justify-between">
-          <span className="flex items-center gap-2 px-3 text-lg font-bold tracking-tight">
-            <WaveIcon className="h-5 w-5 text-cyan-400" />
-            <span>
-              Sound<span className="text-cyan-400">Sea</span>
-            </span>
-          </span>
-          <button className="p-1 text-slate-400 hover:text-white md:hidden" onClick={onClose} aria-label="Close menu">
+        <div className="mb-4 flex items-center justify-between px-2 pt-1 md:hidden">
+          <span className="text-base font-semibold tracking-tight">SoundSea</span>
+          <button className="p-1 text-muted hover:text-ink" onClick={onClose} aria-label="Close menu">
             <XIcon />
           </button>
-        </div>
-
-        <div className="mb-4 px-1">
-          <AuthButton />
         </div>
 
         <button className={itemClass(view === "library")} onClick={() => onSelectView("library")}>
           <MusicIcon className="h-4 w-4 shrink-0" />
           <span className="flex-1 truncate">Library</span>
-          <span className="text-xs text-slate-500">{trackCount}</span>
+          <span className="text-xs text-muted">{trackCount}</span>
+        </button>
+
+        <button className={itemClass(view === "settings")} onClick={() => onSelectView("settings")}>
+          <SettingsIcon className="h-4 w-4 shrink-0" />
+          <span className="flex-1 truncate">Settings</span>
         </button>
 
         <div className="mt-5 mb-1 flex items-center justify-between px-3">
-          <span className="text-xs font-semibold tracking-wider text-slate-500 uppercase">Playlists</span>
+          <span className="text-xs font-semibold tracking-wider text-muted uppercase">Playlists</span>
           <button
-            className="text-slate-400 hover:text-white"
+            className="text-muted hover:text-ink"
             onClick={() => setCreating(true)}
             aria-label="New playlist"
             title="New playlist"
@@ -107,7 +105,7 @@ export default function Sidebar({
                 onChange={(e) => setEditName(e.target.value)}
                 onBlur={submitRename}
                 onKeyDown={(e) => e.key === "Escape" && setEditingId(null)}
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm outline-none focus:border-cyan-500"
+                className={inputClass}
               />
             </form>
           ) : (
@@ -115,19 +113,19 @@ export default function Sidebar({
               key={p.id}
               role="button"
               tabIndex={0}
-              className={itemClass(view === p.id) + " cursor-pointer"}
+              className={itemClass(view === p.id) + " group cursor-pointer"}
               onClick={() => onSelectView(p.id)}
               onKeyDown={(e) => e.key === "Enter" && onSelectView(p.id)}
             >
               <span className="flex-1 truncate">{p.name}</span>
-              <span className="text-xs text-slate-600">{p.trackIds.length}</span>
+              <span className="text-xs text-muted group-hover:hidden">{p.trackIds.length}</span>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setEditingId(p.id);
                   setEditName(p.name);
                 }}
-                className="p-0.5 text-slate-500 hover:text-white"
+                className="hidden p-0.5 text-muted hover:text-ink group-hover:block"
                 aria-label={`Rename ${p.name}`}
                 title="Rename"
               >
@@ -138,7 +136,7 @@ export default function Sidebar({
                   e.stopPropagation();
                   onDelete(p.id);
                 }}
-                className="p-0.5 text-slate-500 hover:text-red-400"
+                className="hidden p-0.5 text-muted hover:text-red-500 group-hover:block"
                 aria-label={`Delete ${p.name}`}
                 title="Delete"
               >
@@ -168,13 +166,13 @@ export default function Sidebar({
                   setNewName("");
                 }
               }}
-              className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm outline-none placeholder:text-slate-600 focus:border-cyan-500"
+              className={inputClass}
             />
           </form>
         )}
 
         {playlists.length === 0 && !creating && (
-          <p className="px-3 py-1 text-xs text-slate-600">No playlists yet — click + to create one.</p>
+          <p className="px-3 py-1 text-xs text-muted">No playlists yet. Click + to create one.</p>
         )}
       </aside>
     </>
