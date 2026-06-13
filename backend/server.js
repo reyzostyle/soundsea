@@ -115,6 +115,16 @@ app.post("/api/download", (req, res) => {
     if (code !== 0 || !fs.existsSync(filePath)) {
       // full yt-dlp output in server logs for debugging
       console.error(`yt-dlp failed (code ${code}) for ${url}\n${stderr}`);
+
+      // TikTok's API broke yt-dlp's extractor upstream (flagged "marked as broken").
+      // Show a clear message; this resolves itself once yt-dlp ships a fix, since the
+      // image reinstalls the latest yt-dlp on every rebuild.
+      if (/No working app info is available|marked as broken/i.test(stderr)) {
+        return res.status(503).json({
+          error: "TikTok downloads are temporarily unavailable (TikTok changed its API). YouTube links work normally.",
+        });
+      }
+
       const lines = stderr.trim().split("\n").filter(Boolean);
       const message =
         lines.filter((l) => l.includes("ERROR")).pop() ||
