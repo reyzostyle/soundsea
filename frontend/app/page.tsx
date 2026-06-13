@@ -4,6 +4,19 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Playlist, RepeatMode, Track } from "@/lib/types";
 import { loadPlaylists, loadTracks, savePlaylists, saveTracks } from "@/lib/storage";
 import { API_BASE, audioUrl } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  cloudAddToPlaylist,
+  cloudCreatePlaylist,
+  cloudDeletePlaylist,
+  cloudDeleteTrack,
+  cloudRemoveFromPlaylist,
+  cloudRenamePlaylist,
+  cloudUpsertTrack,
+  fetchLibrary,
+  migrateLocalToCloud,
+} from "@/lib/cloud";
 import DownloadForm from "@/components/DownloadForm";
 import Sidebar from "@/components/Sidebar";
 import TrackList from "@/components/TrackList";
@@ -12,6 +25,7 @@ import SettingsPanel from "@/components/SettingsPanel";
 import { MenuIcon } from "@/components/Icons";
 
 export default function Home() {
+  const { user } = useAuth();
   const [hydrated, setHydrated] = useState(false);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
@@ -40,6 +54,42 @@ export default function Home() {
   useEffect(() => {
     if (hydrated) savePlaylists(playlists);
   }, [playlists, hydrated]);
+
+  // When signed in, the account is the source of truth: load the cloud library, and
+  // on an empty account push up whatever was stored locally so it gets saved. Signing
+  // out falls back to the local library. (No-op when Supabase isn't configured.)
+  useEffect(() => {
+    if (!hydrated || !supabase) return;
+    let cancelled = false;
+    (async () => {
+      if (user) {
+        const cloud = await fetchLibrary(user.id);
+        if (cancelled) return;
+        if (cloud.tracks.length === 0 && cloud.playlists.length === 0) {
+          const localTracks = loadTracks();
+          const localPlaylists = loadPlaylists();
+          if (localTracks.length || localPlaylists.length) {
+            await migrateLocalToCloud(user.id, localTracks, localPlaylists);
+            if (cancelled) return;
+            setTracks(localTracks);
+            setPlaylists(localPlaylists);
+          } else {
+            setTracks([]);
+            setPlaylists([]);
+          }
+        } else {
+          setTracks(cloud.tracks);
+          setPlaylists(cloud.playlists);
+        }
+      } else {
+        setTracks(loadTracks());
+        setPlaylists(loadPlaylists());
+      }
+    })().catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [user, hydrated]);
 
   const trackById = useMemo(() => new Map(tracks.map((t) => [t.id, t])), [tracks]);
   const currentTrack = currentId ? (trackById.get(currentId) ?? null) : null;
@@ -175,6 +225,7 @@ export default function Home() {
         addedAt: Date.now(),
       };
       setTracks((prev) => [track, ...prev]);
+      if (user) cloudUpsertTrack(user.id, track, url).catch(() => {});
       return true;
     } catch (e) {
       setDownloadError(e instanceof Error ? e.message : "Download failed");
@@ -182,7 +233,7 @@ export default function Home() {
     } finally {
       setDownloading(false);
     }
-  }, []);
+  }, [user]);
 
   // --- playlists ---
 
@@ -190,28 +241,39 @@ export default function Home() {
     const pl: Playlist = { id: crypto.randomUUID(), name: name.trim() || "New playlist", trackIds: [] };
     setPlaylists((prev) => [...prev, pl]);
     setView(pl.id);
+    if (user) cloudCreatePlaylist(user.id, pl).catch(() => {});
   };
 
-  const renamePlaylist = (id: string, name: string) =>
-    setPlaylists((prev) => prev.map((p) => (p.id === id ? { ...p, name: name.trim() || p.name } : p)));
+  const renamePlaylist = (id: string, name: string) => {
+    const trimmed = name.trim();
+    setPlaylists((prev) => prev.map((p) => (p.id === id ? { ...p, name: trimmed || p.name } : p)));
+    if (user && trimmed) cloudRenamePlaylist(id, trimmed).catch(() => {});
+  };
 
   const deletePlaylist = (id: string) => {
     setPlaylists((prev) => prev.filter((p) => p.id !== id));
     if (view === id) setView("library");
     if (queueSource === id) setQueueSource("library");
+    if (user) cloudDeletePlaylist(id).catch(() => {});
   };
 
-  const addToPlaylist = (playlistId: string, trackId: string) =>
+  const addToPlaylist = (playlistId: string, trackId: string) => {
+    const target = playlists.find((p) => p.id === playlistId);
+    if (target?.trackIds.includes(trackId)) return; // already in the playlist
     setPlaylists((prev) =>
       prev.map((p) =>
         p.id === playlistId && !p.trackIds.includes(trackId) ? { ...p, trackIds: [...p.trackIds, trackId] } : p
       )
     );
+    if (user) cloudAddToPlaylist(playlistId, trackId, target?.trackIds.length ?? 0).catch(() => {});
+  };
 
-  const removeFromPlaylist = (playlistId: string, trackId: string) =>
+  const removeFromPlaylist = (playlistId: string, trackId: string) => {
     setPlaylists((prev) =>
       prev.map((p) => (p.id === playlistId ? { ...p, trackIds: p.trackIds.filter((t) => t !== trackId) } : p))
     );
+    if (user) cloudRemoveFromPlaylist(playlistId, trackId).catch(() => {});
+  };
 
   const deleteTrack = (trackId: string) => {
     setTracks((prev) => prev.filter((t) => t.id !== trackId));
@@ -220,6 +282,8 @@ export default function Home() {
       setCurrentId(null);
       setIsPlaying(false);
     }
+    // deleting the track row cascades to playlist_tracks in the DB
+    if (user) cloudDeleteTrack(trackId).catch(() => {});
   };
 
   const selectView = (v: string) => {

@@ -4,6 +4,8 @@ import { createContext, useContext, useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { isSupabaseConfigured, Profile, supabase } from "@/lib/supabase";
 
+type AuthResult = { error?: string; needsConfirmation?: boolean };
+
 type AuthValue = {
   /** false while we're still restoring the session on first load */
   ready: boolean;
@@ -12,6 +14,8 @@ type AuthValue = {
   user: User | null;
   profile: Profile | null;
   signInWithGoogle: () => Promise<void>;
+  signUpWithEmail: (email: string, password: string) => Promise<AuthResult>;
+  signInWithEmail: (email: string, password: string) => Promise<AuthResult>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 };
@@ -58,6 +62,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const signUpWithEmail = async (email: string, password: string): Promise<AuthResult> => {
+    if (!supabase) return { error: "Accounts are not available yet." };
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) return { error: error.message };
+    // When email confirmation is on, Supabase returns a user but no session.
+    if (data.user && !data.session) return { needsConfirmation: true };
+    return {};
+  };
+
+  const signInWithEmail = async (email: string, password: string): Promise<AuthResult> => {
+    if (!supabase) return { error: "Accounts are not available yet." };
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { error: error.message };
+    return {};
+  };
+
   const signOut = async () => {
     await supabase?.auth.signOut();
   };
@@ -68,7 +88,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ ready, configured: isSupabaseConfigured, user, profile, signInWithGoogle, signOut, refreshProfile }}
+      value={{
+        ready,
+        configured: isSupabaseConfigured,
+        user,
+        profile,
+        signInWithGoogle,
+        signUpWithEmail,
+        signInWithEmail,
+        signOut,
+        refreshProfile,
+      }}
     >
       {children}
     </AuthContext.Provider>

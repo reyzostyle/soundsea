@@ -1,60 +1,134 @@
 "use client";
 
+import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { GoogleIcon, LogOutIcon } from "./Icons";
 
 export default function AuthButton() {
-  const { configured, ready, user, profile, signInWithGoogle, signOut } = useAuth();
+  const { configured, ready, user, profile, signInWithGoogle, signUpWithEmail, signInWithEmail, signOut } = useAuth();
 
-  // Supabase not wired up yet: show a gentle hint instead of a dead button.
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  // Supabase not wired up yet: show a gentle hint instead of a dead form.
   if (!configured) {
-    return (
-      <p className="text-sm text-muted">
-        Connect Supabase to enable accounts &amp; sharing.
-      </p>
-    );
+    return <p className="text-sm text-muted">Connect Supabase to enable accounts &amp; sharing.</p>;
   }
 
   if (!ready) {
     return <div className="h-9 animate-pulse rounded-md bg-elevated" />;
   }
 
-  if (!user) {
+  if (user) {
+    const name = profile?.display_name || profile?.username || user.email || "You";
+    const avatar = profile?.avatar_url;
     return (
+      <div className="flex items-center gap-3">
+        {avatar ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={avatar} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
+        ) : (
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-sm font-semibold text-accent">
+            {name.charAt(0).toUpperCase()}
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-ink">{name}</p>
+          {profile?.username && <p className="truncate text-xs text-muted">@{profile.username}</p>}
+        </div>
+        <button
+          onClick={signOut}
+          className="rounded-md p-1.5 text-muted hover:bg-elevated hover:text-ink"
+          title="Sign out"
+          aria-label="Sign out"
+        >
+          <LogOutIcon className="h-4 w-4" />
+        </button>
+      </div>
+    );
+  }
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (busy || !email.trim() || !password) return;
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    const fn = mode === "signup" ? signUpWithEmail : signInWithEmail;
+    const result = await fn(email.trim(), password);
+    setBusy(false);
+    if (result.error) setError(result.error);
+    else if (result.needsConfirmation) setNotice("Check your email to confirm your account, then sign in.");
+  };
+
+  const inputClass =
+    "w-full rounded-md border border-line bg-base px-3 py-2 text-sm text-ink outline-none placeholder:text-muted/70 focus:border-accent";
+
+  return (
+    <div>
+      <div className="mb-3 flex gap-1 rounded-md bg-base p-1">
+        {(["signin", "signup"] as const).map((m) => (
+          <button
+            key={m}
+            onClick={() => {
+              setMode(m);
+              setError(null);
+              setNotice(null);
+            }}
+            className={`flex-1 rounded px-3 py-1.5 text-sm font-medium transition-colors ${
+              mode === m ? "bg-panel text-ink shadow-sm" : "text-muted hover:text-ink"
+            }`}
+          >
+            {m === "signin" ? "Sign in" : "Create account"}
+          </button>
+        ))}
+      </div>
+
+      <form onSubmit={submit} className="flex flex-col gap-2">
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Email"
+          autoComplete="email"
+          className={inputClass}
+        />
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password"
+          autoComplete={mode === "signup" ? "new-password" : "current-password"}
+          className={inputClass}
+        />
+        <button
+          type="submit"
+          disabled={busy || !email.trim() || !password}
+          className="rounded-md bg-brand px-3 py-2 text-sm font-semibold text-white transition-colors enabled:hover:bg-brand-hover disabled:opacity-50"
+        >
+          {busy ? "Please wait" : mode === "signup" ? "Create account" : "Sign in"}
+        </button>
+      </form>
+
+      {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
+      {notice && <p className="mt-2 text-sm text-accent">{notice}</p>}
+
+      <div className="my-3 flex items-center gap-3 text-xs text-muted">
+        <span className="h-px flex-1 bg-line" />
+        or
+        <span className="h-px flex-1 bg-line" />
+      </div>
+
       <button
         onClick={signInWithGoogle}
         className="flex w-full items-center justify-center gap-2 rounded-md border border-line bg-base px-3 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-elevated"
       >
         <GoogleIcon className="h-4 w-4" />
-        Sign in with Google
-      </button>
-    );
-  }
-
-  const name = profile?.display_name || profile?.username || user.email || "You";
-  const avatar = profile?.avatar_url;
-
-  return (
-    <div className="flex items-center gap-3">
-      {avatar ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={avatar} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
-      ) : (
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-sm font-semibold text-accent">
-          {name.charAt(0).toUpperCase()}
-        </div>
-      )}
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-ink">{name}</p>
-        {profile?.username && <p className="truncate text-xs text-muted">@{profile.username}</p>}
-      </div>
-      <button
-        onClick={signOut}
-        className="rounded-md p-1.5 text-muted hover:bg-elevated hover:text-ink"
-        title="Sign out"
-        aria-label="Sign out"
-      >
-        <LogOutIcon className="h-4 w-4" />
+        Continue with Google
       </button>
     </div>
   );
