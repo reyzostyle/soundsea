@@ -48,20 +48,48 @@ function validateUrl(raw) {
   return url.toString();
 }
 
-app.post("/api/download", (req, res) => {
+const TIKTOK_MUSIC_HINT =
+  "This is a TikTok music link. Open a video that uses this sound (for example the first one on the music page) and paste that video's link instead.";
+
+const isTikTokHost = (hostname) => /(^|\.)tiktok\.com$/i.test(hostname);
+
+// TikTok share links (vm.tiktok.com, /t/...) are short redirects, so follow them to
+// tell a music/sound page apart from a normal video before handing off to yt-dlp.
+async function resolveFinalUrl(url) {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    const r = await fetch(url, {
+      redirect: "follow",
+      signal: controller.signal,
+      headers: { "User-Agent": "Mozilla/5.0" },
+    });
+    clearTimeout(timer);
+    return r.url || url;
+  } catch {
+    return url;
+  }
+}
+
+function isTikTokMusicUrl(finalUrl) {
+  try {
+    const u = new URL(finalUrl);
+    return isTikTokHost(u.hostname) && /\/music\//i.test(u.pathname);
+  } catch {
+    return false;
+  }
+}
+
+app.post("/api/download", async (req, res) => {
   const url = validateUrl(req.body && req.body.url);
   if (!url) {
     return res.status(400).json({ error: "Please provide a valid YouTube or TikTok URL." });
   }
 
-  // TikTok "sound"/music pages are a catalog of videos, not a single audio file,
-  // and yt-dlp's tiktok:sound extractor is currently broken upstream. Give a clear
-  // hint instead of a confusing yt-dlp error.
-  if (/(^|\.)tiktok\.com$/i.test(new URL(url).hostname) && /^\/music\//i.test(new URL(url).pathname)) {
-    return res.status(400).json({
-      error:
-        "A TikTok music page can't be downloaded. Open a video that uses this sound (for example the first one on the music page) and paste that video's link instead.",
-    });
+  // A TikTok music/sound page is a catalog of videos, not a single audio file. Resolve
+  // share-link redirects and stop those early with a clear hint to use a video link.
+  if (isTikTokHost(new URL(url).hostname) && isTikTokMusicUrl(await resolveFinalUrl(url))) {
+    return res.status(400).json({ error: TIKTOK_MUSIC_HINT });
   }
 
   const id = crypto.randomBytes(8).toString("hex");
@@ -116,13 +144,11 @@ app.post("/api/download", (req, res) => {
       // full yt-dlp output in server logs for debugging
       console.error(`yt-dlp failed (code ${code}) for ${url}\n${stderr}`);
 
-      // TikTok's API broke yt-dlp's extractor upstream (flagged "marked as broken").
-      // Show a clear message; this resolves itself once yt-dlp ships a fix, since the
-      // image reinstalls the latest yt-dlp on every rebuild.
-      if (/No working app info is available|marked as broken/i.test(stderr)) {
-        return res.status(503).json({
-          error: "TikTok downloads are temporarily unavailable (TikTok changed its API). YouTube links work normally.",
-        });
+      // Fallback for a TikTok music/sound link the redirect check above missed (for
+      // example if the redirect lookup timed out): yt-dlp's sound extractor fails with
+      // "No working app info", so point the user at a video link.
+      if (isTikTokHost(new URL(url).hostname) && /No working app info is available/i.test(stderr)) {
+        return res.status(400).json({ error: TIKTOK_MUSIC_HINT });
       }
 
       const lines = stderr.trim().split("\n").filter(Boolean);
