@@ -61,14 +61,20 @@ app.post("/api/download", (req, res) => {
     "--audio-quality", "0",
     "--format", "bestaudio/best",
     "--no-playlist",
+    // download the EJS solver scripts so deno can solve the "n" signature
+    // challenge — without it YouTube format URLs stay encrypted and only
+    // thumbnail images are returned
+    "--remote-components", "ejs:github",
     "-j",
     "--no-simulate",
     "-o", path.join(DOWNLOADS_DIR, `${id}.%(ext)s`),
   ];
 
-  // Bot detection is handled by the bgutil PO token provider (running on :4416).
-  // We deliberately do NOT pass account cookies — logged-in cookies require a
-  // Data Sync ID that breaks GVS PO token fetching on datacenter IPs.
+  if (fs.existsSync(COOKIES_FILE)) {
+    // datacenter IP is flagged: cookies pass the bot check, and the "tv"
+    // client avoids the SABR-only streaming that skips web_safari formats
+    args.push("--cookies", COOKIES_FILE, "--extractor-args", "youtube:player_client=tv");
+  }
 
   args.push(url);
 
@@ -142,7 +148,7 @@ app.get("/api/health", async (req, res) => {
 
   if (req.query.test) {
     // flexible probe: ?test=1&cookies=1&client=tv&datasync=XXX&url=...
-    const args = ["-v", "-j", "--simulate", "--format", "bestaudio/best", "--no-playlist"];
+    const args = ["-v", "-j", "--simulate", "--format", "bestaudio/best", "--no-playlist", "--remote-components", "ejs:github"];
     if (req.query.cookies === "1" && fs.existsSync(COOKIES_FILE)) args.push("--cookies", COOKIES_FILE);
     const ea = [];
     if (req.query.client) ea.push(`player_client=${req.query.client}`);
