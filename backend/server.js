@@ -59,7 +59,8 @@ app.post("/api/download", (req, res) => {
   // hint instead of a confusing yt-dlp error.
   if (/(^|\.)tiktok\.com$/i.test(new URL(url).hostname) && /^\/music\//i.test(new URL(url).pathname)) {
     return res.status(400).json({
-      error: "TikTok music links aren't supported. Paste a link to a specific video instead.",
+      error:
+        "A TikTok music page can't be downloaded. Open a video that uses this sound (for example the first one on the music page) and paste that video's link instead.",
     });
   }
 
