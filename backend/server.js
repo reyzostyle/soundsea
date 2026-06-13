@@ -98,6 +98,8 @@ app.post("/api/download", (req, res) => {
     const filename = `${id}.mp3`;
     const filePath = path.join(DOWNLOADS_DIR, filename);
     if (code !== 0 || !fs.existsSync(filePath)) {
+      // full yt-dlp output in server logs for debugging
+      console.error(`yt-dlp failed (code ${code}) for ${url}\n${stderr}`);
       const lines = stderr.trim().split("\n").filter(Boolean);
       const message =
         lines.filter((l) => l.includes("ERROR")).pop() ||
