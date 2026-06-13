@@ -141,15 +141,22 @@ app.get("/api/health", async (req, res) => {
   }
 
   if (req.query.test) {
+    // flexible probe: ?test=1&cookies=1&client=tv&datasync=XXX&url=...
+    const args = ["-v", "-j", "--simulate", "--format", "bestaudio/best", "--no-playlist"];
+    if (req.query.cookies === "1" && fs.existsSync(COOKIES_FILE)) args.push("--cookies", COOKIES_FILE);
+    const ea = [];
+    if (req.query.client) ea.push(`player_client=${req.query.client}`);
+    if (req.query.datasync) ea.push(`data_sync_id=${req.query.datasync}`);
+    if (ea.length) args.push("--extractor-args", `youtube:${ea.join(";")}`);
+    args.push(req.query.url ? String(req.query.url) : "https://youtu.be/l_M4-tVgLSU");
+    result.args = args;
     result.verboseTail = await new Promise((resolve) => {
-      const args = ["-v", "-j", "--simulate", "--format", "bestaudio/best", "--no-playlist"];
-      args.push("https://youtu.be/l_M4-tVgLSU");
       const p = spawn("yt-dlp", args);
       let err = "";
       p.stderr.on("data", (c) => (err += c));
-      p.on("close", () => resolve(err.split("\n").slice(-40)));
+      p.on("close", () => resolve(err.split("\n").slice(-50)));
       p.on("error", (e) => resolve([`error: ${e.message}`]));
-      setTimeout(() => p.kill("SIGKILL"), 60000);
+      setTimeout(() => p.kill("SIGKILL"), 90000);
     });
   }
 
