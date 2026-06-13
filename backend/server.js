@@ -125,6 +125,42 @@ app.post("/api/download", (req, res) => {
   });
 });
 
+// Temporary diagnostics: yt-dlp version, PO token provider status, cookies, verbose extract
+app.get("/api/health", async (req, res) => {
+  const result = { cookiesFile: fs.existsSync(COOKIES_FILE) };
+
+  result.ytdlpVersion = await new Promise((resolve) => {
+    const p = spawn("yt-dlp", ["--version"]);
+    let out = "";
+    p.stdout.on("data", (c) => (out += c));
+    p.on("close", () => resolve(out.trim()));
+    p.on("error", (e) => resolve(`error: ${e.message}`));
+  });
+
+  try {
+    const r = await fetch("http://127.0.0.1:4416/ping");
+    result.potProvider = await r.json();
+  } catch (e) {
+    result.potProvider = `unreachable: ${e.message}`;
+  }
+
+  if (req.query.test) {
+    result.verboseTail = await new Promise((resolve) => {
+      const args = ["-v", "-j", "--simulate", "--format", "bestaudio/best", "--no-playlist"];
+      if (fs.existsSync(COOKIES_FILE)) args.push("--cookies", COOKIES_FILE);
+      args.push("https://youtu.be/l_M4-tVgLSU");
+      const p = spawn("yt-dlp", args);
+      let err = "";
+      p.stderr.on("data", (c) => (err += c));
+      p.on("close", () => resolve(err.split("\n").slice(-40)));
+      p.on("error", (e) => resolve([`error: ${e.message}`]));
+      setTimeout(() => p.kill("SIGKILL"), 60000);
+    });
+  }
+
+  res.json(result);
+});
+
 app.get("/api/audio/:filename", (req, res) => {
   const { filename } = req.params;
   // filenames are always <16 hex chars>.mp3, generated server-side
