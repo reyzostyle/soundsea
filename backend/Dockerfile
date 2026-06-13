@@ -3,8 +3,12 @@
 FROM node:20-slim
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ffmpeg python3 python3-pip git ca-certificates \
+  && apt-get install -y --no-install-recommends ffmpeg python3 python3-pip git ca-certificates curl unzip \
   && rm -rf /var/lib/apt/lists/*
+
+# Deno: JS runtime yt-dlp needs to solve the "n" signature challenge (EJS)
+RUN curl -fsSL https://deno.land/install.sh | sh
+ENV PATH="/root/.deno/bin:${PATH}"
 
 # Bump the date below to force a fresh yt-dlp install (busts Docker layer cache)
 ENV YTDLP_REFRESH=2026-06-13

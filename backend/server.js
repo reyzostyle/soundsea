@@ -66,13 +66,9 @@ app.post("/api/download", (req, res) => {
     "-o", path.join(DOWNLOADS_DIR, `${id}.%(ext)s`),
   ];
 
-  if (fs.existsSync(COOKIES_FILE)) {
-    // web clients support cookies; ios/android would be skipped and leave no formats
-    args.push("--cookies", COOKIES_FILE);
-  } else {
-    // without cookies the ios/android clients dodge most bot checks
-    args.push("--extractor-args", "youtube:player_client=ios,android");
-  }
+  // Bot detection is handled by the bgutil PO token provider (running on :4416).
+  // We deliberately do NOT pass account cookies — logged-in cookies require a
+  // Data Sync ID that breaks GVS PO token fetching on datacenter IPs.
 
   args.push(url);
 
@@ -147,7 +143,6 @@ app.get("/api/health", async (req, res) => {
   if (req.query.test) {
     result.verboseTail = await new Promise((resolve) => {
       const args = ["-v", "-j", "--simulate", "--format", "bestaudio/best", "--no-playlist"];
-      if (fs.existsSync(COOKIES_FILE)) args.push("--cookies", COOKIES_FILE);
       args.push("https://youtu.be/l_M4-tVgLSU");
       const p = spawn("yt-dlp", args);
       let err = "";
