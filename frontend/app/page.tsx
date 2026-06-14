@@ -14,6 +14,7 @@ import {
   cloudRemoveFromPlaylist,
   cloudRenamePlaylist,
   cloudReorderPlaylist,
+  cloudUpdatePlaylistThumbnail,
   cloudUpsertTrack,
   fetchLibrary,
   migrateLocalToCloud,
@@ -24,6 +25,8 @@ import TrackList from "@/components/TrackList";
 import PlayerBar from "@/components/PlayerBar";
 import SettingsPanel from "@/components/SettingsPanel";
 import TrackEditModal from "@/components/TrackEditModal";
+import PlaylistHeader from "@/components/PlaylistHeader";
+import PlaylistEditModal from "@/components/PlaylistEditModal";
 import { MenuIcon } from "@/components/Icons";
 
 export default function Home() {
@@ -43,6 +46,8 @@ export default function Home() {
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [editingTrackId, setEditingTrackId] = useState<string | null>(null);
+  const [editingPlaylistId, setEditingPlaylistId] = useState<string | null>(null);
+  const [shuffle, setShuffle] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -156,6 +161,12 @@ export default function Home() {
     (auto = false) => {
       if (!queue.length) return;
       const idx = queue.findIndex((t) => t.id === currentId);
+      if (shuffle && queue.length > 1) {
+        let r = idx;
+        while (r === idx) r = Math.floor(Math.random() * queue.length);
+        playTrack(queue[r].id);
+        return;
+      }
       if (idx === -1) {
         playTrack(queue[0].id);
         return;
@@ -168,8 +179,22 @@ export default function Home() {
         playTrack(queue[idx + 1].id);
       }
     },
-    [queue, currentId, repeat, playTrack]
+    [queue, currentId, repeat, playTrack, shuffle]
   );
+
+  const playPlaylist = (playlistId: string) => {
+    const list = tracksFor(playlistId);
+    if (!list.length) return;
+    setShuffle(false);
+    playTrack(list[0].id, playlistId);
+  };
+
+  const shufflePlaylist = (playlistId: string) => {
+    const list = tracksFor(playlistId);
+    if (!list.length) return;
+    setShuffle(true);
+    playTrack(list[Math.floor(Math.random() * list.length)].id, playlistId);
+  };
 
   const goPrev = useCallback(() => {
     const a = audioRef.current;
@@ -316,6 +341,16 @@ export default function Home() {
     if (user) cloudDeletePlaylist(id).catch(() => {});
   };
 
+  const updatePlaylist = (id: string, changes: { name: string; thumbnail: string | null }) => {
+    setPlaylists((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, name: changes.name, thumbnail: changes.thumbnail } : p))
+    );
+    if (user) {
+      if (changes.name) cloudRenamePlaylist(id, changes.name).catch(() => {});
+      cloudUpdatePlaylistThumbnail(id, changes.thumbnail).catch(() => {});
+    }
+  };
+
   const addToPlaylist = (playlistId: string, trackId: string) => {
     const target = playlists.find((p) => p.id === playlistId);
     if (target?.trackIds.includes(trackId)) return; // already in the playlist
@@ -406,15 +441,38 @@ export default function Home() {
             <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8 md:py-10">
               <SettingsPanel />
             </div>
+          ) : viewPlaylist ? (
+            // YouTube-Music-style playlist view: the cover header scrolls with the list
+            <div className="flex-1 overflow-y-auto px-4 pt-6 pb-6 md:px-8 md:pt-8">
+              <PlaylistHeader
+                playlist={viewPlaylist}
+                tracks={viewTracks}
+                onPlay={() => playPlaylist(viewPlaylist.id)}
+                onShuffle={() => shufflePlaylist(viewPlaylist.id)}
+                onEdit={() => setEditingPlaylistId(viewPlaylist.id)}
+              />
+              <TrackList
+                tracks={viewTracks}
+                emptyHint="This playlist is empty. Add tracks from your library with the three-dots menu on any track."
+                currentId={currentId}
+                isPlaying={isPlaying}
+                playlists={playlists}
+                isPlaylistView
+                onPlay={(trackId) => playTrack(trackId, view)}
+                onTogglePlay={togglePlay}
+                onAddToPlaylist={addToPlaylist}
+                onEdit={setEditingTrackId}
+                onMove={(trackId, dir) => moveInPlaylist(viewPlaylist.id, trackId, dir)}
+                onRemove={(trackId) => removeFromPlaylist(viewPlaylist.id, trackId)}
+              />
+            </div>
           ) : (
             <>
-              {/* pinned: download field + section title stay put while the list scrolls */}
+              {/* library: pinned download field + title, list scrolls below */}
               <div className="shrink-0 px-4 pt-5 md:px-8 md:pt-8">
                 <DownloadForm downloading={downloading} error={downloadError} onDownload={handleDownload} />
                 <div className="mt-6 mb-3 flex items-baseline justify-between gap-3">
-                  <h1 className="truncate text-xl font-semibold tracking-tight">
-                    {viewPlaylist ? viewPlaylist.name : "Library"}
-                  </h1>
+                  <h1 className="truncate text-xl font-semibold tracking-tight">Library</h1>
                   <span className="shrink-0 text-sm text-muted">
                     {viewTracks.length} {viewTracks.length === 1 ? "track" : "tracks"}
                   </span>
@@ -424,23 +482,17 @@ export default function Home() {
               <div className="flex-1 overflow-y-auto px-4 pb-6 md:px-8">
                 <TrackList
                   tracks={viewTracks}
-                  emptyHint={
-                    viewPlaylist
-                      ? "This playlist is empty. Add tracks from your library with the + button on any track."
-                      : "Paste a YouTube or TikTok link above to download your first track."
-                  }
+                  emptyHint="Paste a YouTube or TikTok link above to download your first track."
                   currentId={currentId}
                   isPlaying={isPlaying}
                   playlists={playlists}
-                  isPlaylistView={!!viewPlaylist}
+                  isPlaylistView={false}
                   onPlay={(trackId) => playTrack(trackId, view)}
                   onTogglePlay={togglePlay}
                   onAddToPlaylist={addToPlaylist}
                   onEdit={setEditingTrackId}
-                  onMove={(trackId, dir) => viewPlaylist && moveInPlaylist(viewPlaylist.id, trackId, dir)}
-                  onRemove={(trackId) =>
-                    viewPlaylist ? removeFromPlaylist(viewPlaylist.id, trackId) : deleteTrack(trackId)
-                  }
+                  onMove={() => {}}
+                  onRemove={(trackId) => deleteTrack(trackId)}
                 />
               </div>
             </>
@@ -454,11 +506,13 @@ export default function Home() {
         position={position}
         duration={duration}
         repeat={repeat}
+        shuffle={shuffle}
         onTogglePlay={togglePlay}
         onPrev={goPrev}
         onNext={() => goNext(false)}
         onSeek={handleSeek}
         onCycleRepeat={cycleRepeat}
+        onToggleShuffle={() => setShuffle((s) => !s)}
       />
 
       <audio
@@ -476,6 +530,15 @@ export default function Home() {
           track={trackById.get(editingTrackId)!}
           onClose={() => setEditingTrackId(null)}
           onSave={(changes) => updateTrack(editingTrackId, changes)}
+        />
+      )}
+
+      {editingPlaylistId && playlists.find((p) => p.id === editingPlaylistId) && (
+        <PlaylistEditModal
+          playlist={playlists.find((p) => p.id === editingPlaylistId)!}
+          fallbackCover={tracksFor(editingPlaylistId).find((t) => t.thumbnail)?.thumbnail ?? null}
+          onClose={() => setEditingPlaylistId(null)}
+          onSave={(changes) => updatePlaylist(editingPlaylistId, changes)}
         />
       )}
     </div>

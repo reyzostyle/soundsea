@@ -31,6 +31,7 @@ export async function fetchLibrary(userId: string): Promise<{ tracks: Track[]; p
   const playlists: Playlist[] = (plRows ?? []).map((p) => ({
     id: p.id,
     name: p.name,
+    thumbnail: p.thumbnail ?? null,
     trackIds: (byPlaylist.get(p.id) ?? []).sort((a, b) => a.position - b.position).map((pt) => pt.track_id),
   }));
 
@@ -63,6 +64,15 @@ export async function cloudCreatePlaylist(userId: string, p: Playlist) {
 export async function cloudRenamePlaylist(id: string, name: string) {
   if (!supabase) return;
   await supabase.from("playlists").update({ name }).eq("id", id);
+}
+
+// Best-effort: silently no-ops if the playlists.thumbnail column hasn't been added yet,
+// so custom playlist covers never break the rest of the sync.
+export async function cloudUpdatePlaylistThumbnail(id: string, thumbnail: string | null) {
+  if (!supabase) return;
+  try {
+    await supabase.from("playlists").update({ thumbnail }).eq("id", id);
+  } catch {}
 }
 
 export async function cloudDeletePlaylist(id: string) {

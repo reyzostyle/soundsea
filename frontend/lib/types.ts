@@ -11,6 +11,7 @@ export type Playlist = {
   id: string;
   name: string;
   trackIds: string[];
+  thumbnail?: string | null;
 };
 
 export type RepeatMode = "off" | "all" | "one";

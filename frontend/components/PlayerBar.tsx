@@ -3,7 +3,7 @@
 import { CSSProperties } from "react";
 import { RepeatMode, Track } from "@/lib/types";
 import { formatTime } from "@/lib/format";
-import { MusicIcon, NextIcon, PauseIcon, PlayIcon, PrevIcon, RepeatIcon } from "./Icons";
+import { MusicIcon, NextIcon, PauseIcon, PlayIcon, PrevIcon, RepeatIcon, ShuffleIcon } from "./Icons";
 
 type Props = {
   track: Track | null;
@@ -11,11 +11,13 @@ type Props = {
   position: number;
   duration: number;
   repeat: RepeatMode;
+  shuffle: boolean;
   onTogglePlay: () => void;
   onPrev: () => void;
   onNext: () => void;
   onSeek: (seconds: number) => void;
   onCycleRepeat: () => void;
+  onToggleShuffle: () => void;
 };
 
 const repeatLabel: Record<RepeatMode, string> = {
@@ -30,11 +32,13 @@ export default function PlayerBar({
   position,
   duration,
   repeat,
+  shuffle,
   onTogglePlay,
   onPrev,
   onNext,
   onSeek,
   onCycleRepeat,
+  onToggleShuffle,
 }: Props) {
   const total = duration || track?.duration || 0;
   const pct = total ? Math.min(100, (position / total) * 100) : 0;
@@ -56,6 +60,14 @@ export default function PlayerBar({
             {!track && <p className="truncate text-xs text-muted">Download a track to get started</p>}
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
+            <button
+              onClick={onToggleShuffle}
+              title={shuffle ? "Shuffle: on" : "Shuffle: off"}
+              aria-label={shuffle ? "Shuffle: on" : "Shuffle: off"}
+              className={`hidden rounded-md p-2 sm:block ${shuffle ? "text-accent" : "text-muted hover:text-ink"}`}
+            >
+              <ShuffleIcon className="h-5 w-5" />
+            </button>
             <button
               onClick={onPrev}
               disabled={!track}
