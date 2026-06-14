@@ -22,6 +22,7 @@ import Sidebar from "@/components/Sidebar";
 import TrackList from "@/components/TrackList";
 import PlayerBar from "@/components/PlayerBar";
 import SettingsPanel from "@/components/SettingsPanel";
+import TrackEditModal from "@/components/TrackEditModal";
 import { MenuIcon } from "@/components/Icons";
 
 export default function Home() {
@@ -40,6 +41,7 @@ export default function Home() {
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [editingTrackId, setEditingTrackId] = useState<string | null>(null);
 
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -331,6 +333,18 @@ export default function Home() {
     if (user) cloudRemoveFromPlaylist(playlistId, trackId).catch(() => {});
   };
 
+  const updateTrack = (trackId: string, changes: { title: string; thumbnail: string | null }) => {
+    let updated: Track | undefined;
+    setTracks((prev) =>
+      prev.map((t) => {
+        if (t.id !== trackId) return t;
+        updated = { ...t, ...changes };
+        return updated;
+      })
+    );
+    if (user && updated) cloudUpsertTrack(user.id, updated).catch(() => {});
+  };
+
   const deleteTrack = (trackId: string) => {
     setTracks((prev) => prev.filter((t) => t.id !== trackId));
     setPlaylists((prev) => prev.map((p) => ({ ...p, trackIds: p.trackIds.filter((t) => t !== trackId) })));
@@ -404,6 +418,7 @@ export default function Home() {
                   onPlay={(trackId) => playTrack(trackId, view)}
                   onTogglePlay={togglePlay}
                   onAddToPlaylist={addToPlaylist}
+                  onEdit={setEditingTrackId}
                   onRemove={(trackId) =>
                     viewPlaylist ? removeFromPlaylist(viewPlaylist.id, trackId) : deleteTrack(trackId)
                   }
@@ -436,6 +451,14 @@ export default function Home() {
         onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
         onEnded={handleEnded}
       />
+
+      {editingTrackId && trackById.get(editingTrackId) && (
+        <TrackEditModal
+          track={trackById.get(editingTrackId)!}
+          onClose={() => setEditingTrackId(null)}
+          onSave={(changes) => updateTrack(editingTrackId, changes)}
+        />
+      )}
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Playlist, Track } from "@/lib/types";
 import { formatTime } from "@/lib/format";
-import { MinusIcon, MusicIcon, PauseIcon, PlayIcon, PlusIcon, TrashIcon } from "./Icons";
+import { MinusIcon, MusicIcon, PauseIcon, PencilIcon, PlayIcon, PlusIcon, TrashIcon } from "./Icons";
 
 type Props = {
   tracks: Track[];
@@ -15,6 +15,7 @@ type Props = {
   onPlay: (trackId: string) => void;
   onTogglePlay: () => void;
   onAddToPlaylist: (playlistId: string, trackId: string) => void;
+  onEdit: (trackId: string) => void;
   onRemove: (trackId: string) => void;
 };
 
@@ -85,6 +86,7 @@ export default function TrackList({
   onPlay,
   onTogglePlay,
   onAddToPlaylist,
+  onEdit,
   onRemove,
 }: Props) {
   if (tracks.length === 0) {
@@ -133,6 +135,17 @@ export default function TrackList({
                 </p>
                 <p className="text-xs text-muted">{formatTime(t.duration)}</p>
               </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(t.id);
+                }}
+                className="rounded-md p-2 text-muted hover:bg-elevated hover:text-ink"
+                title="Edit track"
+                aria-label="Edit track"
+              >
+                <PencilIcon className="h-4 w-4" />
+              </button>
               <AddToPlaylistButton playlists={playlists} onAdd={(plId) => onAddToPlaylist(plId, t.id)} />
               <button
                 onClick={(e) => {
