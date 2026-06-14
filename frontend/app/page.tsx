@@ -196,6 +196,17 @@ export default function Home() {
     playTrack(list[Math.floor(Math.random() * list.length)].id, playlistId);
   };
 
+  const sharePlaylist = async (playlist: Playlist) => {
+    const url = window.location.origin;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: playlist.name, text: `My playlist "${playlist.name}" on SoundSea`, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+      }
+    } catch {}
+  };
+
   const goPrev = useCallback(() => {
     const a = audioRef.current;
     if (a && a.currentTime > 3) {
@@ -442,14 +453,15 @@ export default function Home() {
               <SettingsPanel />
             </div>
           ) : viewPlaylist ? (
-            // YouTube-Music-style playlist view: the cover header scrolls with the list
-            <div className="flex-1 overflow-y-auto px-4 pt-6 pb-6 md:px-8 md:pt-8">
+            // Spotify-style playlist view: the banner header scrolls with the list
+            <div className="flex-1 overflow-y-auto px-4 pb-6 md:px-8">
               <PlaylistHeader
                 playlist={viewPlaylist}
                 tracks={viewTracks}
                 onPlay={() => playPlaylist(viewPlaylist.id)}
                 onShuffle={() => shufflePlaylist(viewPlaylist.id)}
                 onEdit={() => setEditingPlaylistId(viewPlaylist.id)}
+                onShare={() => sharePlaylist(viewPlaylist)}
               />
               <TrackList
                 tracks={viewTracks}
