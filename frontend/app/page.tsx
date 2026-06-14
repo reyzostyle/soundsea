@@ -198,6 +198,62 @@ export default function Home() {
 
   const cycleRepeat = () => setRepeat((r) => (r === "off" ? "all" : r === "all" ? "one" : "off"));
 
+  // --- lock-screen / headphone media controls ---
+  // Register only seek handlers (not prev/next), so the lock screen shows the
+  // skip-10-seconds controls and they actually scrub within the track.
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
+    const ms = navigator.mediaSession;
+    if (!currentTrack) {
+      ms.metadata = null;
+      return;
+    }
+    ms.metadata = new MediaMetadata({
+      title: currentTrack.title,
+      artist: "SoundSea",
+      artwork: currentTrack.thumbnail ? [{ src: currentTrack.thumbnail, sizes: "512x512" }] : [],
+    });
+    const seekBy = (delta: number) => {
+      const a = audioRef.current;
+      if (!a) return;
+      const t = Math.max(0, Math.min(a.duration || 0, a.currentTime + delta));
+      a.currentTime = t;
+      setPosition(t);
+    };
+    ms.setActionHandler("play", () => togglePlay());
+    ms.setActionHandler("pause", () => togglePlay());
+    ms.setActionHandler("seekbackward", (d) => seekBy(-(d.seekOffset || 10)));
+    ms.setActionHandler("seekforward", (d) => seekBy(d.seekOffset || 10));
+    ms.setActionHandler("seekto", (d) => {
+      const a = audioRef.current;
+      if (a && typeof d.seekTime === "number") {
+        a.currentTime = d.seekTime;
+        setPosition(d.seekTime);
+      }
+    });
+    return () => {
+      for (const action of ["play", "pause", "seekbackward", "seekforward", "seekto"] as const) {
+        try {
+          ms.setActionHandler(action, null);
+        } catch {}
+      }
+    };
+  }, [currentTrack, togglePlay]);
+
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
+    navigator.mediaSession.playbackState = isPlaying ? "playing" : "paused";
+  }, [isPlaying]);
+
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
+    const ms = navigator.mediaSession;
+    if (!ms.setPositionState || !currentTrack || !duration || !isFinite(duration)) return;
+    try {
+      ms.setPositionState({ duration, position: Math.min(position, duration), playbackRate: 1 });
+    } catch {}
+  }, [position, duration, currentTrack]);
+
   // --- download ---
 
   const handleDownload = useCallback(async (url: string): Promise<boolean> => {
@@ -292,15 +348,15 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-dvh">
-      <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-line bg-panel/90 px-4 py-3 backdrop-blur md:hidden">
+    <div className="flex h-dvh flex-col overflow-hidden">
+      <header className="flex shrink-0 items-center gap-3 border-b border-line bg-panel/90 px-4 py-3 backdrop-blur md:hidden">
         <button onClick={() => setSidebarOpen(true)} aria-label="Open menu" className="p-1 text-muted hover:text-ink">
           <MenuIcon />
         </button>
         <span className="font-semibold tracking-tight">SoundSea</span>
       </header>
 
-      <div className="mx-auto flex max-w-6xl">
+      <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1">
         <Sidebar
           playlists={playlists}
           trackCount={tracks.length}
@@ -313,40 +369,46 @@ export default function Home() {
           onDelete={deletePlaylist}
         />
 
-        <main className="min-w-0 flex-1 px-4 pt-6 pb-44 md:px-8 md:pt-10">
+        <main className="flex min-w-0 flex-1 flex-col">
           {view === "settings" ? (
-            <SettingsPanel />
+            <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8 md:py-10">
+              <SettingsPanel />
+            </div>
           ) : (
             <>
-              <DownloadForm downloading={downloading} error={downloadError} onDownload={handleDownload} />
-
-              <div className="mb-4 flex items-baseline justify-between gap-3">
-                <h1 className="truncate text-xl font-semibold tracking-tight">
-                  {viewPlaylist ? viewPlaylist.name : "Library"}
-                </h1>
-                <span className="shrink-0 text-sm text-muted">
-                  {viewTracks.length} {viewTracks.length === 1 ? "track" : "tracks"}
-                </span>
+              {/* pinned: download field + section title stay put while the list scrolls */}
+              <div className="shrink-0 px-4 pt-5 md:px-8 md:pt-8">
+                <DownloadForm downloading={downloading} error={downloadError} onDownload={handleDownload} />
+                <div className="mt-6 mb-3 flex items-baseline justify-between gap-3">
+                  <h1 className="truncate text-xl font-semibold tracking-tight">
+                    {viewPlaylist ? viewPlaylist.name : "Library"}
+                  </h1>
+                  <span className="shrink-0 text-sm text-muted">
+                    {viewTracks.length} {viewTracks.length === 1 ? "track" : "tracks"}
+                  </span>
+                </div>
               </div>
 
-              <TrackList
-                tracks={viewTracks}
-                emptyHint={
-                  viewPlaylist
-                    ? "This playlist is empty. Add tracks from your library with the + button on any track."
-                    : "Paste a YouTube or TikTok link above to download your first track."
-                }
-                currentId={currentId}
-                isPlaying={isPlaying}
-                playlists={playlists}
-                isPlaylistView={!!viewPlaylist}
-                onPlay={(trackId) => playTrack(trackId, view)}
-                onTogglePlay={togglePlay}
-                onAddToPlaylist={addToPlaylist}
-                onRemove={(trackId) =>
-                  viewPlaylist ? removeFromPlaylist(viewPlaylist.id, trackId) : deleteTrack(trackId)
-                }
-              />
+              <div className="flex-1 overflow-y-auto px-4 pb-6 md:px-8">
+                <TrackList
+                  tracks={viewTracks}
+                  emptyHint={
+                    viewPlaylist
+                      ? "This playlist is empty. Add tracks from your library with the + button on any track."
+                      : "Paste a YouTube or TikTok link above to download your first track."
+                  }
+                  currentId={currentId}
+                  isPlaying={isPlaying}
+                  playlists={playlists}
+                  isPlaylistView={!!viewPlaylist}
+                  onPlay={(trackId) => playTrack(trackId, view)}
+                  onTogglePlay={togglePlay}
+                  onAddToPlaylist={addToPlaylist}
+                  onRemove={(trackId) =>
+                    viewPlaylist ? removeFromPlaylist(viewPlaylist.id, trackId) : deleteTrack(trackId)
+                  }
+                />
+              </div>
             </>
           )}
         </main>

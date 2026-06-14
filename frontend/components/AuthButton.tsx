@@ -66,11 +66,11 @@ export default function AuthButton() {
   };
 
   const inputClass =
-    "w-full rounded-md border border-line bg-base px-3 py-2 text-sm text-ink outline-none placeholder:text-muted/70 focus:border-accent";
+    "w-full rounded-md border border-line bg-app px-3 py-2 text-sm text-ink outline-none placeholder:text-muted/70 focus:border-accent";
 
   return (
     <div>
-      <div className="mb-3 flex gap-1 rounded-md bg-base p-1">
+      <div className="mb-3 flex gap-1 rounded-md bg-app p-1">
         {(["signin", "signup"] as const).map((m) => (
           <button
             key={m}
@@ -125,7 +125,7 @@ export default function AuthButton() {
 
       <button
         onClick={signInWithGoogle}
-        className="flex w-full items-center justify-center gap-2 rounded-md border border-line bg-base px-3 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-elevated"
+        className="flex w-full items-center justify-center gap-2 rounded-md border border-line bg-app px-3 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-elevated"
       >
         <GoogleIcon className="h-4 w-4" />
         Continue with Google

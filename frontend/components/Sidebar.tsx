@@ -49,18 +49,18 @@ export default function Sidebar({
     }`;
 
   const inputClass =
-    "w-full rounded-md border border-line bg-base px-2.5 py-1.5 text-sm text-ink outline-none placeholder:text-muted/70 focus:border-accent";
+    "w-full rounded-md border border-line bg-app px-2.5 py-1.5 text-sm text-ink outline-none placeholder:text-muted/70 focus:border-accent";
 
   return (
     <>
       {open && <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={onClose} />}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col gap-1 overflow-y-auto border-r border-line bg-panel p-3 pb-32 transition-transform md:sticky md:top-0 md:z-auto md:h-dvh md:w-60 md:shrink-0 md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col gap-1 overflow-y-auto border-r border-line bg-panel p-3 pb-6 transition-transform md:static md:z-auto md:w-60 md:shrink-0 md:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="mb-4 flex items-center justify-between px-2 pt-1 md:hidden">
-          <span className="text-base font-semibold tracking-tight">SoundSea</span>
+          <span className="text-lg font-semibold tracking-tight text-ink">SoundSea</span>
           <button className="p-1 text-muted hover:text-ink" onClick={onClose} aria-label="Close menu">
             <XIcon />
           </button>

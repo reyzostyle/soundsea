@@ -6,7 +6,7 @@
 */
 :root,
 [data-theme="light"] {
-  --c-base: #f6f7f9;
+  --c-app: #f6f7f9;
   --c-panel: #ffffff;
   --c-elevated: #eceef2;
   --c-line: #e1e5ea;
@@ -18,7 +18,7 @@
 
 [data-theme="dark"] {
   /* dark gray, not pure black */
-  --c-base: #181b21;
+  --c-app: #181b21;
   --c-panel: #21252d;
   --c-elevated: #2b303a;
   --c-line: #363c47;
@@ -29,7 +29,8 @@
 }
 
 @theme inline {
-  --color-base: var(--c-base);
+  /* "app" (not "base") so it doesn't collide with Tailwind's text-base font size */
+  --color-app: var(--c-app);
   --color-panel: var(--c-panel);
   --color-elevated: var(--c-elevated);
   --color-line: var(--c-line);
@@ -46,8 +47,18 @@
 }
 
 body {
-  background-color: var(--c-base);
+  background-color: var(--c-app);
   color: var(--c-ink);
+}
+
+/* iOS zooms in when a focused field's font is < 16px. Force 16px on phones so
+   pasting a link or naming a playlist doesn't yank the viewport around. */
+@media (max-width: 640px) {
+  input:not([type="range"]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
 }
 
 /* Seek bar: the filled portion is driven by the --fill CSS variable set inline */

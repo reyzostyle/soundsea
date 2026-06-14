@@ -40,7 +40,7 @@ export default function PlayerBar({
   const pct = total ? Math.min(100, (position / total) * 100) : 0;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-panel/95 backdrop-blur">
+    <div className="shrink-0 border-t border-line bg-panel">
       <div className="mx-auto flex max-w-6xl flex-col gap-1.5 px-4 py-3 md:px-8">
         <div className="flex items-center gap-3">
           {track?.thumbnail ? (
@@ -67,7 +67,7 @@ export default function PlayerBar({
             <button
               onClick={onTogglePlay}
               disabled={!track}
-              className="rounded-full bg-ink p-2.5 text-base transition enabled:hover:opacity-90 disabled:opacity-40"
+              className="rounded-full bg-ink p-2.5 text-app transition enabled:hover:opacity-90 disabled:opacity-40"
               aria-label={isPlaying ? "Pause" : "Play"}
             >
               {isPlaying ? <PauseIcon /> : <PlayIcon />}
@@ -90,7 +90,7 @@ export default function PlayerBar({
             >
               <RepeatIcon className="h-5 w-5" />
               {repeat === "one" && (
-                <span className="absolute -top-0.5 -right-0.5 rounded-full bg-accent px-1 text-[9px] leading-3 font-bold text-base">
+                <span className="absolute -top-0.5 -right-0.5 rounded-full bg-accent px-1 text-[9px] leading-3 font-bold text-app">
                   1
                 </span>
               )}
