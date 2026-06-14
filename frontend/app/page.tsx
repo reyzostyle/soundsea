@@ -284,6 +284,22 @@ export default function Home() {
     navigator.mediaSession.playbackState = isPlaying ? "playing" : "paused";
   }, [isPlaying]);
 
+  // Keyboard: Space / Enter toggle play-pause (ignored while typing in a field).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      // don't hijack typing or a focused button/link/select
+      if (t && (["INPUT", "TEXTAREA", "BUTTON", "A", "SELECT"].includes(t.tagName) || t.isContentEditable)) return;
+      if (e.code === "Space" || e.key === " " || e.key === "Enter") {
+        if (!currentTrack) return;
+        e.preventDefault();
+        togglePlay();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [togglePlay, currentTrack]);
+
   useEffect(() => {
     if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
     const ms = navigator.mediaSession;
@@ -449,12 +465,12 @@ export default function Home() {
 
         <main className="flex min-w-0 flex-1 flex-col">
           {view === "settings" ? (
-            <div className="flex-1 overflow-y-auto px-4 py-6 md:px-8 md:py-10">
+            <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-6 md:px-8 md:py-10">
               <SettingsPanel />
             </div>
           ) : viewPlaylist ? (
             // Spotify-style playlist view: the banner header scrolls with the list
-            <div className="flex-1 overflow-y-auto px-4 pb-6 md:px-8">
+            <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-6 md:px-8">
               <PlaylistHeader
                 playlist={viewPlaylist}
                 tracks={viewTracks}
@@ -491,7 +507,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto px-4 pb-6 md:px-8">
+              <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-6 md:px-8">
                 <TrackList
                   tracks={viewTracks}
                   emptyHint="Paste a YouTube or TikTok link above to download your first track."

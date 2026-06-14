@@ -46,9 +46,18 @@
   --radius-lg: 8px;
 }
 
+html,
+body {
+  height: 100%;
+}
+
+/* Lock the page itself so only the inner content area scrolls — keeps the top bar
+   and player pinned on mobile and stops the whole page from rubber-banding. */
 body {
   background-color: var(--c-app);
   color: var(--c-ink);
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 /* iOS zooms in when a focused field's font is < 16px. Force 16px on phones so
