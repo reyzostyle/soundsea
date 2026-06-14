@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Playlist } from "@/lib/types";
-import { MusicIcon, PencilIcon, PlusIcon, SettingsIcon, TrashIcon, XIcon } from "./Icons";
+import { CheckIcon, MusicIcon, PencilIcon, PlusIcon, SettingsIcon, TrashIcon, XIcon } from "./Icons";
 
 type Props = {
   playlists: Playlist[];
@@ -148,7 +148,7 @@ export default function Sidebar({
 
         {creating && (
           <form
-            className="px-1 py-0.5"
+            className="flex items-center gap-1 px-1 py-0.5"
             onSubmit={(e) => {
               e.preventDefault();
               submitCreate();
@@ -159,7 +159,6 @@ export default function Sidebar({
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               placeholder="Playlist name"
-              onBlur={submitCreate}
               onKeyDown={(e) => {
                 if (e.key === "Escape") {
                   setCreating(false);
@@ -168,6 +167,15 @@ export default function Sidebar({
               }}
               className={inputClass}
             />
+            <button
+              type="submit"
+              disabled={!newName.trim()}
+              className="shrink-0 rounded-md bg-brand p-2 text-white transition-colors enabled:hover:bg-brand-hover disabled:opacity-40"
+              aria-label="Create playlist"
+              title="Create"
+            >
+              <CheckIcon className="h-4 w-4" />
+            </button>
           </form>
         )}
 

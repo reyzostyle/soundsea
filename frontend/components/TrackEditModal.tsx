@@ -70,16 +70,8 @@ export default function TrackEditModal({ track, onClose, onSave }: Props) {
             <textarea
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              rows={3}
+              rows={4}
               className="w-full resize-none rounded-md border border-line bg-app px-3 py-2 text-sm text-ink outline-none focus:border-accent"
-            />
-            <label className="mt-3 mb-1 block text-xs font-medium text-muted">Or paste an image URL</label>
-            <input
-              type="url"
-              defaultValue={thumbnail && !thumbnail.startsWith("data:") ? thumbnail : ""}
-              onChange={(e) => setThumbnail(e.target.value.trim() || null)}
-              placeholder="https://…"
-              className="w-full rounded-md border border-line bg-app px-3 py-2 text-sm text-ink outline-none focus:border-accent"
             />
           </div>
         </div>

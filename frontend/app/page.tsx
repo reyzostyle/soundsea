@@ -13,6 +13,7 @@ import {
   cloudDeleteTrack,
   cloudRemoveFromPlaylist,
   cloudRenamePlaylist,
+  cloudReorderPlaylist,
   cloudUpsertTrack,
   fetchLibrary,
   migrateLocalToCloud,
@@ -333,6 +334,23 @@ export default function Home() {
     if (user) cloudRemoveFromPlaylist(playlistId, trackId).catch(() => {});
   };
 
+  const moveInPlaylist = (playlistId: string, trackId: string, dir: -1 | 1) => {
+    let reordered: string[] | undefined;
+    setPlaylists((prev) =>
+      prev.map((p) => {
+        if (p.id !== playlistId) return p;
+        const ids = [...p.trackIds];
+        const idx = ids.indexOf(trackId);
+        const j = idx + dir;
+        if (idx < 0 || j < 0 || j >= ids.length) return p;
+        [ids[idx], ids[j]] = [ids[j], ids[idx]];
+        reordered = ids;
+        return { ...p, trackIds: ids };
+      })
+    );
+    if (user && reordered) cloudReorderPlaylist(playlistId, reordered).catch(() => {});
+  };
+
   const updateTrack = (trackId: string, changes: { title: string; thumbnail: string | null }) => {
     let updated: Track | undefined;
     setTracks((prev) =>
@@ -419,6 +437,7 @@ export default function Home() {
                   onTogglePlay={togglePlay}
                   onAddToPlaylist={addToPlaylist}
                   onEdit={setEditingTrackId}
+                  onMove={(trackId, dir) => viewPlaylist && moveInPlaylist(viewPlaylist.id, trackId, dir)}
                   onRemove={(trackId) =>
                     viewPlaylist ? removeFromPlaylist(viewPlaylist.id, trackId) : deleteTrack(trackId)
                   }

@@ -80,6 +80,13 @@ export async function cloudRemoveFromPlaylist(playlistId: string, trackId: strin
   await supabase.from("playlist_tracks").delete().eq("playlist_id", playlistId).eq("track_id", trackId);
 }
 
+export async function cloudReorderPlaylist(playlistId: string, orderedTrackIds: string[]) {
+  if (!supabase) return;
+  await supabase
+    .from("playlist_tracks")
+    .upsert(orderedTrackIds.map((trackId, i) => ({ playlist_id: playlistId, track_id: trackId, position: i })));
+}
+
 // One-time push of a localStorage library into the account (first sign-in on a device
 // that already has tracks). Uses upsert so re-running is harmless.
 export async function migrateLocalToCloud(userId: string, tracks: Track[], playlists: Playlist[]) {
