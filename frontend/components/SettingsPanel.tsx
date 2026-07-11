@@ -52,12 +52,25 @@ export default function SettingsPanel() {
         </div>
       </section>
 
-      <section>
+      <section className="mb-8">
         <h2 className="mb-1 text-sm font-semibold text-ink">Account</h2>
         <p className="mb-3 text-sm text-muted">Sign in to sync your library and share playlists.</p>
         <div className="rounded-lg border border-line bg-panel p-4">
           <AuthButton />
         </div>
+      </section>
+
+      <section>
+        <h2 className="mb-1 text-sm font-semibold text-ink">Support</h2>
+        <p className="mb-3 text-sm text-muted">Questions, bugs or ideas? Join our Discord server.</p>
+        <a
+          href="https://discord.gg/VPQ3xncf5Q"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-md border border-line px-4 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-elevated"
+        >
+          Join the Discord
+        </a>
       </section>
     </div>
   );

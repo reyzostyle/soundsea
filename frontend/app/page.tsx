@@ -48,6 +48,7 @@ export default function Home() {
   const [editingTrackId, setEditingTrackId] = useState<string | null>(null);
   const [editingPlaylistId, setEditingPlaylistId] = useState<string | null>(null);
   const [shuffle, setShuffle] = useState(false);
+  const [volume, setVolume] = useState(1);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   // When restoring a previous session, holds the position to seek to (stay paused).
@@ -58,8 +59,20 @@ export default function Home() {
   useEffect(() => {
     setTracks(loadTracks());
     setPlaylists(loadPlaylists());
+    try {
+      const v = parseFloat(localStorage.getItem("mp.volume") ?? "");
+      if (!Number.isNaN(v)) setVolume(Math.min(1, Math.max(0, v)));
+    } catch {}
     setHydrated(true);
   }, []);
+
+  // keep the audio element's volume in sync and remember it
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.volume = volume;
+    try {
+      localStorage.setItem("mp.volume", String(volume));
+    } catch {}
+  }, [volume]);
   useEffect(() => {
     if (hydrated) saveTracks(tracks);
   }, [tracks, hydrated]);
@@ -574,12 +587,14 @@ export default function Home() {
         duration={duration}
         repeat={repeat}
         shuffle={shuffle}
+        volume={volume}
         onTogglePlay={togglePlay}
         onPrev={goPrev}
         onNext={() => goNext(false)}
         onSeek={handleSeek}
         onCycleRepeat={cycleRepeat}
         onToggleShuffle={() => setShuffle((s) => !s)}
+        onVolume={setVolume}
       />
 
       <audio
