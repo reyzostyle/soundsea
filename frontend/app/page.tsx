@@ -238,8 +238,8 @@ export default function Home() {
   const cycleRepeat = () => setRepeat((r) => (r === "off" ? "all" : r === "all" ? "one" : "off"));
 
   // --- lock-screen / headphone media controls ---
-  // Register only seek handlers (not prev/next), so the lock screen shows the
-  // skip-10-seconds controls and they actually scrub within the track.
+  // Register previoustrack/nexttrack so the lock screen shows track-skip buttons
+  // (not the 10-second jumps); seekto keeps the progress bar scrubbable.
   useEffect(() => {
     if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
     const ms = navigator.mediaSession;
@@ -252,17 +252,10 @@ export default function Home() {
       artist: "SoundSea",
       artwork: currentTrack.thumbnail ? [{ src: currentTrack.thumbnail, sizes: "512x512" }] : [],
     });
-    const seekBy = (delta: number) => {
-      const a = audioRef.current;
-      if (!a) return;
-      const t = Math.max(0, Math.min(a.duration || 0, a.currentTime + delta));
-      a.currentTime = t;
-      setPosition(t);
-    };
     ms.setActionHandler("play", () => togglePlay());
     ms.setActionHandler("pause", () => togglePlay());
-    ms.setActionHandler("seekbackward", (d) => seekBy(-(d.seekOffset || 10)));
-    ms.setActionHandler("seekforward", (d) => seekBy(d.seekOffset || 10));
+    ms.setActionHandler("previoustrack", () => goPrev());
+    ms.setActionHandler("nexttrack", () => goNext(false));
     ms.setActionHandler("seekto", (d) => {
       const a = audioRef.current;
       if (a && typeof d.seekTime === "number") {
@@ -270,14 +263,20 @@ export default function Home() {
         setPosition(d.seekTime);
       }
     });
+    // explicitly clear the seek handlers so iOS prefers track skip buttons
+    for (const action of ["seekbackward", "seekforward"] as const) {
+      try {
+        ms.setActionHandler(action, null);
+      } catch {}
+    }
     return () => {
-      for (const action of ["play", "pause", "seekbackward", "seekforward", "seekto"] as const) {
+      for (const action of ["play", "pause", "previoustrack", "nexttrack", "seekto"] as const) {
         try {
           ms.setActionHandler(action, null);
         } catch {}
       }
     };
-  }, [currentTrack, togglePlay]);
+  }, [currentTrack, togglePlay, goPrev, goNext]);
 
   useEffect(() => {
     if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
