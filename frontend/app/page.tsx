@@ -50,6 +50,10 @@ export default function Home() {
   const [shuffle, setShuffle] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement>(null);
+  // When restoring a previous session, holds the position to seek to (stay paused).
+  const pendingRestoreRef = useRef<number | null>(null);
+  const restoredRef = useRef(false);
+  const lastSaveRef = useRef(0);
 
   useEffect(() => {
     setTracks(loadTracks());
@@ -62,6 +66,33 @@ export default function Home() {
   useEffect(() => {
     if (hydrated) savePlaylists(playlists);
   }, [playlists, hydrated]);
+
+  // Remember what was playing so a suspended/killed tab (e.g. iOS locking the phone
+  // while paused) picks up right where it left off on the next visit.
+  const savePlayback = useCallback(
+    (pos: number) => {
+      if (!currentId) return;
+      try {
+        localStorage.setItem("mp.playback", JSON.stringify({ trackId: currentId, source: queueSource, position: pos }));
+      } catch {}
+    },
+    [currentId, queueSource]
+  );
+
+  useEffect(() => {
+    if (!hydrated || restoredRef.current) return;
+    restoredRef.current = true;
+    try {
+      const raw = localStorage.getItem("mp.playback");
+      if (!raw) return;
+      const saved = JSON.parse(raw) as { trackId?: string; source?: string; position?: number };
+      if (!saved.trackId || !tracks.some((t) => t.id === saved.trackId)) return;
+      pendingRestoreRef.current = typeof saved.position === "number" ? saved.position : 0;
+      if (saved.source) setQueueSource(saved.source);
+      setCurrentId(saved.trackId);
+      setIsPlaying(false);
+    } catch {}
+  }, [hydrated, tracks]);
 
   // When signed in, the account is the source of truth: load the cloud library, and
   // on an empty account push up whatever was stored locally so it gets saved. Signing
@@ -120,11 +151,14 @@ export default function Home() {
 
   const playTrack = useCallback(
     (id: string, source?: string) => {
+      // an explicit play cancels any pending session restore
+      const restoring = pendingRestoreRef.current !== null;
+      pendingRestoreRef.current = null;
       if (source) setQueueSource(source);
       if (id === currentId) {
         const a = audioRef.current;
         if (a) {
-          a.currentTime = 0;
+          if (!restoring) a.currentTime = 0;
           a.play().catch(() => {});
         }
         return;
@@ -142,6 +176,12 @@ export default function Home() {
     if (!currentId) {
       a.pause();
       setPosition(0);
+      setDuration(0);
+      return;
+    }
+    if (pendingRestoreRef.current !== null) {
+      // restored from a previous session: show the saved position, stay paused
+      setPosition(pendingRestoreRef.current);
       setDuration(0);
       return;
     }
@@ -545,10 +585,29 @@ export default function Home() {
       <audio
         ref={audioRef}
         src={currentTrack ? audioUrl(currentTrack.filename) : undefined}
+        preload="metadata"
         onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
-        onTimeUpdate={(e) => setPosition(e.currentTarget.currentTime)}
-        onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
+        onPause={(e) => {
+          setIsPlaying(false);
+          savePlayback(e.currentTarget.currentTime);
+        }}
+        onTimeUpdate={(e) => {
+          const t = e.currentTarget.currentTime;
+          setPosition(t);
+          if (Date.now() - lastSaveRef.current > 3000) {
+            lastSaveRef.current = Date.now();
+            savePlayback(t);
+          }
+        }}
+        onLoadedMetadata={(e) => {
+          setDuration(e.currentTarget.duration);
+          if (pendingRestoreRef.current !== null) {
+            const t = Math.min(pendingRestoreRef.current, e.currentTarget.duration || pendingRestoreRef.current);
+            e.currentTarget.currentTime = t;
+            setPosition(t);
+            pendingRestoreRef.current = null;
+          }
+        }}
         onEnded={handleEnded}
       />
 
