@@ -52,9 +52,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     if (!supabase) return;
+    // Strip a trailing dot some browsers keep on the hostname (a technically valid
+    // "FQDN root" form) — Supabase echoes redirectTo verbatim after OAuth, and a
+    // trailing-dot host trips up TLS/cert matching in several browsers.
+    const url = new URL(window.location.origin);
+    url.hostname = url.hostname.replace(/\.+$/, "");
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: window.location.origin },
+      options: { redirectTo: url.origin },
     });
   };
 
