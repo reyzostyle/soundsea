@@ -21,8 +21,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setTheme = useCallback((t: Theme) => {
+    const root = document.documentElement;
+    // cross-fade the palette swap (class enables color transitions app-wide)
+    root.classList.add("theme-transition");
+    window.setTimeout(() => root.classList.remove("theme-transition"), 350);
     setThemeState(t);
-    document.documentElement.setAttribute("data-theme", t);
+    root.setAttribute("data-theme", t);
     try {
       localStorage.setItem(STORAGE_KEY, t);
     } catch {}

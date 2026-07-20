@@ -517,12 +517,12 @@ export default function Home() {
 
         <main className="flex min-w-0 flex-1 flex-col">
           {view === "settings" ? (
-            <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-6 md:px-8 md:py-10">
+            <div key="settings" className="anim-view flex-1 overflow-y-auto overscroll-contain px-4 py-6 md:px-8 md:py-10">
               <SettingsPanel />
             </div>
           ) : viewPlaylist ? (
             // Spotify-style playlist view: the banner header scrolls with the list
-            <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-6 md:px-8">
+            <div key={viewPlaylist.id} className="anim-view flex-1 overflow-y-auto overscroll-contain px-4 pb-6 md:px-8">
               <PlaylistHeader
                 playlist={viewPlaylist}
                 tracks={viewTracks}
@@ -547,7 +547,7 @@ export default function Home() {
               />
             </div>
           ) : (
-            <>
+            <div key="library" className="anim-view flex min-h-0 flex-1 flex-col">
               {/* library: pinned download field + title, list scrolls below */}
               <div className="shrink-0 px-4 pt-5 md:px-8 md:pt-8">
                 <DownloadForm downloading={downloading} error={downloadError} onDownload={handleDownload} />
@@ -575,7 +575,7 @@ export default function Home() {
                   onRemove={(trackId) => deleteTrack(trackId)}
                 />
               </div>
-            </>
+            </div>
           )}
         </main>
       </div>

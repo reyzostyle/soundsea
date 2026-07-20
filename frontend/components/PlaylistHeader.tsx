@@ -52,14 +52,14 @@ export default function PlaylistHeader({ playlist, tracks, onPlay, onShuffle, on
         <button
           onClick={onPlay}
           disabled={empty}
-          className="flex items-center gap-2 rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition-colors enabled:hover:bg-brand-hover disabled:opacity-40"
+          className="flex items-center gap-2 rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition duration-150 enabled:hover:bg-brand-hover enabled:active:scale-[0.97] disabled:opacity-40"
         >
           <PlayIcon className="h-4 w-4" /> Play
         </button>
         <button
           onClick={onShuffle}
           disabled={empty}
-          className="flex items-center gap-2 rounded-full border border-line px-5 py-2.5 text-sm font-semibold text-ink transition-colors enabled:hover:bg-elevated disabled:opacity-40"
+          className="flex items-center gap-2 rounded-full border border-line px-5 py-2.5 text-sm font-semibold text-ink transition duration-150 enabled:hover:bg-elevated enabled:active:scale-[0.97] disabled:opacity-40"
         >
           <ShuffleIcon className="h-4 w-4" /> Shuffle
         </button>

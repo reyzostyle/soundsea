@@ -38,8 +38,8 @@ export default function PlaylistEditModal({ playlist, fallbackCover, onClose, on
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" role="dialog" aria-modal="true">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative w-full max-w-sm rounded-lg border border-line bg-panel p-5 shadow-xl">
+      <div className="anim-fade absolute inset-0 bg-black/60" onClick={onClose} />
+      <div className="anim-pop relative w-full max-w-sm rounded-xl border border-line bg-panel p-5 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-base font-semibold text-ink">Edit playlist</h2>
           <button onClick={onClose} className="rounded-md p-1 text-muted hover:bg-elevated hover:text-ink" aria-label="Close">

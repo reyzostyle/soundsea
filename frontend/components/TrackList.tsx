@@ -65,8 +65,8 @@ function TrackActionSheet({
 
   return createPortal(
     <div className="fixed inset-0 z-[70] flex flex-col justify-end sm:items-center sm:justify-center">
-      <div className="absolute inset-0 bg-black/55" onClick={onClose} />
-      <div className="relative max-h-[80vh] w-full overflow-y-auto rounded-t-2xl border border-line bg-panel p-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:m-4 sm:max-w-sm sm:rounded-2xl">
+      <div className="anim-fade absolute inset-0 bg-black/55" onClick={onClose} />
+      <div className="anim-sheet relative max-h-[80vh] w-full overflow-y-auto rounded-t-xl border border-line bg-panel p-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:m-4 sm:max-w-sm sm:rounded-xl">
         <div className="mx-auto mt-1 mb-2 h-1 w-9 rounded-full bg-line sm:hidden" />
 
         {/* track header */}

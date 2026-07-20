@@ -83,7 +83,7 @@ export default function PlayerBar({
             <button
               onClick={onTogglePlay}
               disabled={!track}
-              className="rounded-full bg-ink p-2.5 text-app transition enabled:hover:opacity-90 disabled:opacity-40"
+              className="rounded-full bg-ink p-2.5 text-app transition duration-150 enabled:hover:opacity-90 enabled:active:scale-95 disabled:opacity-40"
               aria-label={isPlaying ? "Pause" : "Play"}
             >
               {isPlaying ? <PauseIcon /> : <PlayIcon />}

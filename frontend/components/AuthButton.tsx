@@ -53,9 +53,7 @@ export default function AuthButton() {
         <GoogleIcon className="h-4 w-4" />
         Continue with Google
       </button>
-      <p className="mt-2 text-xs text-muted">
-        Tracks already downloaded on this device move into your account on first sign-in.
-      </p>
+      <p className="mt-2 text-center text-xs text-muted">Syncs your library across devices.</p>
     </div>
   );
 }
