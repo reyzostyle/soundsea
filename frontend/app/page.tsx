@@ -5,6 +5,7 @@ import { Playlist, RepeatMode, Track } from "@/lib/types";
 import { loadPlaylists, loadTracks, savePlaylists, saveTracks } from "@/lib/storage";
 import { API_BASE, audioUrl } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
+import { squareCoverUrl } from "@/lib/image";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   cloudAddToPlaylist,
@@ -131,7 +132,17 @@ export default function Home() {
           }
         } else {
           setTracks(cloud.tracks);
-          setPlaylists(cloud.playlists);
+          // keep the locally saved playlist order (the DB has no position column)
+          const localOrder = loadPlaylists().map((p) => p.id);
+          const sorted = [...cloud.playlists].sort((a, b) => {
+            const ia = localOrder.indexOf(a.id);
+            const ib = localOrder.indexOf(b.id);
+            if (ia === -1 && ib === -1) return 0;
+            if (ia === -1) return 1;
+            if (ib === -1) return -1;
+            return ia - ib;
+          });
+          setPlaylists(sorted);
         }
       } else {
         setTracks(loadTracks());
@@ -305,6 +316,21 @@ export default function Home() {
       artist: "SoundSea",
       artwork: currentTrack.thumbnail ? [{ src: currentTrack.thumbnail, sizes: "512x512" }] : [],
     });
+    // swap in a square center-crop once ready, so the lock screen doesn't show
+    // a 16:9 video frame with bars
+    let artworkStale = false;
+    if (currentTrack.thumbnail) {
+      squareCoverUrl(currentTrack.thumbnail)
+        .then((sq) => {
+          if (artworkStale) return;
+          ms.metadata = new MediaMetadata({
+            title: currentTrack.title,
+            artist: "SoundSea",
+            artwork: [{ src: sq, sizes: "512x512", type: "image/jpeg" }],
+          });
+        })
+        .catch(() => {});
+    }
     ms.setActionHandler("play", () => togglePlay());
     ms.setActionHandler("pause", () => togglePlay());
     ms.setActionHandler("previoustrack", () => goPrev());
@@ -323,6 +349,7 @@ export default function Home() {
       } catch {}
     }
     return () => {
+      artworkStale = true;
       for (const action of ["play", "pause", "previoustrack", "nexttrack", "seekto"] as const) {
         try {
           ms.setActionHandler(action, null);
@@ -420,6 +447,17 @@ export default function Home() {
     if (user) cloudDeletePlaylist(id).catch(() => {});
   };
 
+  // Order lives in the local array (and is persisted by savePlaylists); the cloud
+  // fetch below re-applies it since the DB itself has no playlist position column.
+  const reorderPlaylists = (ids: string[]) => {
+    setPlaylists((prev) => {
+      const byId = new Map(prev.map((p) => [p.id, p]));
+      const ordered = ids.map((id) => byId.get(id)).filter((p): p is Playlist => !!p);
+      const missing = prev.filter((p) => !ids.includes(p.id));
+      return [...ordered, ...missing];
+    });
+  };
+
   const updatePlaylist = (id: string, changes: { name: string; thumbnail: string | null }) => {
     setPlaylists((prev) =>
       prev.map((p) => (p.id === id ? { ...p, name: changes.name, thumbnail: changes.thumbnail } : p))
@@ -513,6 +551,7 @@ export default function Home() {
           onCreate={createPlaylist}
           onRename={renamePlaylist}
           onDelete={deletePlaylist}
+          onReorder={reorderPlaylists}
         />
 
         <main className="flex min-w-0 flex-1 flex-col">

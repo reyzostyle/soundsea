@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { Track } from "@/lib/types";
 import { downscaleToDataUrl } from "@/lib/image";
-import { MusicIcon, XIcon } from "./Icons";
+import { MusicIcon, PencilIcon, XIcon } from "./Icons";
 
 type Props = {
   track: Track;
@@ -46,7 +46,12 @@ export default function TrackEditModal({ track, onClose, onSave }: Props) {
 
         <div className="flex gap-4">
           <div className="shrink-0">
-            <div className="h-20 w-20 overflow-hidden rounded-md bg-elevated">
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="group relative h-20 w-20 overflow-hidden rounded-md bg-elevated"
+              aria-label="Change cover"
+            >
               {thumbnail ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={thumbnail} alt="" className="h-full w-full object-cover" />
@@ -55,7 +60,10 @@ export default function TrackEditModal({ track, onClose, onSave }: Props) {
                   <MusicIcon className="h-6 w-6 text-muted" />
                 </div>
               )}
-            </div>
+              <span className="absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition-opacity group-hover:opacity-100">
+                <PencilIcon className="h-5 w-5 text-white" />
+              </span>
+            </button>
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={pickFile} />
             <button
               onClick={() => fileRef.current?.click()}

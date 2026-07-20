@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { Playlist } from "@/lib/types";
 import { downscaleToDataUrl } from "@/lib/image";
-import { MusicIcon, XIcon } from "./Icons";
+import { MusicIcon, PencilIcon, XIcon } from "./Icons";
 
 type Props = {
   playlist: Playlist;
@@ -48,7 +48,12 @@ export default function PlaylistEditModal({ playlist, fallbackCover, onClose, on
         </div>
 
         <div className="flex flex-col items-center">
-          <div className="h-28 w-28 overflow-hidden rounded-lg bg-elevated">
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="group relative h-28 w-28 overflow-hidden rounded-lg bg-elevated"
+            aria-label="Change cover"
+          >
             {cover ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={cover} alt="" className="h-full w-full object-cover" />
@@ -57,7 +62,10 @@ export default function PlaylistEditModal({ playlist, fallbackCover, onClose, on
                 <MusicIcon className="h-8 w-8 text-muted" />
               </div>
             )}
-          </div>
+            <span className="absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition-opacity group-hover:opacity-100">
+              <PencilIcon className="h-6 w-6 text-white" />
+            </span>
+          </button>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={pickFile} />
           <div className="mt-2 flex gap-3 text-xs">
             <button onClick={() => fileRef.current?.click()} className="text-accent hover:underline">
