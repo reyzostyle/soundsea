@@ -45,7 +45,7 @@ export default function TrackEditModal({ track, onClose, onSave }: Props) {
         </div>
 
         <div className="flex gap-4">
-          <div className="shrink-0">
+          <div className="flex shrink-0 flex-col items-center gap-2">
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
@@ -67,7 +67,7 @@ export default function TrackEditModal({ track, onClose, onSave }: Props) {
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={pickFile} />
             <button
               onClick={() => fileRef.current?.click()}
-              className="mt-2 w-20 rounded-md border border-line py-1 text-xs text-muted hover:text-ink"
+              className="w-20 rounded-md border border-line py-1 text-xs text-muted hover:text-ink"
             >
               Change
             </button>

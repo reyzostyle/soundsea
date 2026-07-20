@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Playlist, Track } from "@/lib/types";
 import { formatTime } from "@/lib/format";
 import {
-  ChevronDownIcon,
   ChevronUpIcon,
+  GripIcon,
   MinusIcon,
   MoreIcon,
   MusicIcon,
@@ -29,9 +29,12 @@ type Props = {
   onTogglePlay: () => void;
   onAddToPlaylist: (playlistId: string, trackId: string) => void;
   onEdit: (trackId: string) => void;
-  onMove: (trackId: string, direction: -1 | 1) => void;
   onRemove: (trackId: string) => void;
+  /** present in playlist view: enables drag-to-reorder via the grip handles */
+  onReorder?: (ids: string[]) => void;
 };
+
+type DragState = { id: string; from: number; dy: number };
 
 // A YouTube-Music-style bottom sheet of actions for one track. Rendered in a portal
 // so it always sits above everything and never gets clipped by the scroll area.
@@ -39,25 +42,17 @@ function TrackActionSheet({
   track,
   playlists,
   isPlaylistView,
-  canMoveUp,
-  canMoveDown,
   onClose,
   onEdit,
   onAddToPlaylist,
-  onMoveUp,
-  onMoveDown,
   onRemove,
 }: {
   track: Track;
   playlists: Playlist[];
   isPlaylistView: boolean;
-  canMoveUp: boolean;
-  canMoveDown: boolean;
   onClose: () => void;
   onEdit: () => void;
   onAddToPlaylist: (playlistId: string) => void;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
   onRemove: () => void;
 }) {
   const [addingTo, setAddingTo] = useState(false);
@@ -112,16 +107,6 @@ function TrackActionSheet({
             <button onClick={() => setAddingTo(true)} className={row}>
               <PlusIcon className="h-5 w-5 text-muted" /> Add to playlist
             </button>
-            {isPlaylistView && (
-              <>
-                <button onClick={() => { onMoveUp(); onClose(); }} disabled={!canMoveUp} className={row}>
-                  <ChevronUpIcon className="h-5 w-5 text-muted" /> Move up
-                </button>
-                <button onClick={() => { onMoveDown(); onClose(); }} disabled={!canMoveDown} className={row}>
-                  <ChevronDownIcon className="h-5 w-5 text-muted" /> Move down
-                </button>
-              </>
-            )}
             <button onClick={() => { onRemove(); onClose(); }} className={row + " text-red-500"}>
               {isPlaylistView ? <MinusIcon className="h-5 w-5" /> : <TrashIcon className="h-5 w-5" />}
               {isPlaylistView ? "Remove from playlist" : "Delete from library"}
@@ -145,10 +130,54 @@ export default function TrackList({
   onTogglePlay,
   onAddToPlaylist,
   onEdit,
-  onMove,
   onRemove,
+  onReorder,
 }: Props) {
   const [menuId, setMenuId] = useState<string | null>(null);
+  const [drag, setDrag] = useState<DragState | null>(null);
+  const rowHeight = useRef(68);
+  const startYRef = useRef(0);
+
+  const canDrag = isPlaylistView && !!onReorder && tracks.length > 1;
+
+  const dropIndex = drag
+    ? Math.max(0, Math.min(tracks.length - 1, drag.from + Math.round(drag.dy / rowHeight.current)))
+    : -1;
+
+  const beginDrag = (e: React.PointerEvent, id: string, index: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const rowEl = (e.currentTarget as HTMLElement).closest("[data-track-row]") as HTMLElement | null;
+    if (rowEl) rowHeight.current = rowEl.offsetHeight;
+    startYRef.current = e.clientY;
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {}
+    setDrag({ id, from: index, dy: 0 });
+  };
+
+  const moveDrag = (e: React.PointerEvent) => {
+    if (!drag) return;
+    setDrag({ ...drag, dy: e.clientY - startYRef.current });
+  };
+
+  const endDrag = () => {
+    if (!drag) return;
+    if (dropIndex !== drag.from && onReorder) {
+      const ids = tracks.map((t) => t.id);
+      const [moved] = ids.splice(drag.from, 1);
+      ids.splice(dropIndex, 0, moved);
+      onReorder(ids);
+    }
+    setDrag(null);
+  };
+
+  const rowShift = (index: number): number => {
+    if (!drag || tracks[index]?.id === drag.id) return 0;
+    if (drag.from < dropIndex && index > drag.from && index <= dropIndex) return -rowHeight.current;
+    if (drag.from > dropIndex && index >= dropIndex && index < drag.from) return rowHeight.current;
+    return 0;
+  };
 
   if (tracks.length === 0) {
     return (
@@ -164,15 +193,40 @@ export default function TrackList({
 
   return (
     <>
-      <ul className="divide-y divide-line/70 overflow-hidden rounded-lg border border-line bg-panel">
-        {tracks.map((t) => {
+      <ul className={`divide-y divide-line/70 overflow-hidden rounded-lg border border-line bg-panel ${drag ? "select-none" : ""}`}>
+        {tracks.map((t, index) => {
           const isCurrent = t.id === currentId;
+          const isDragged = drag?.id === t.id;
           return (
-            <li key={t.id}>
+            <li
+              key={t.id}
+              data-track-row
+              className={
+                drag
+                  ? isDragged
+                    ? "relative z-10 scale-[1.01] bg-elevated shadow-lg transition-none"
+                    : "transition-transform duration-150 ease-out"
+                  : ""
+              }
+              style={drag ? { transform: `translateY(${isDragged ? drag.dy : rowShift(index)}px)` } : undefined}
+            >
               <div
                 className="group flex cursor-pointer items-center gap-3 px-3 py-2.5 transition-colors hover:bg-elevated/60"
                 onClick={() => (isCurrent ? onTogglePlay() : onPlay(t.id))}
               >
+                {canDrag && (
+                  <span
+                    className="-ml-1 shrink-0 cursor-grab touch-none p-1 text-muted/50 active:cursor-grabbing"
+                    onPointerDown={(e) => beginDrag(e, t.id, index)}
+                    onPointerMove={moveDrag}
+                    onPointerUp={endDrag}
+                    onPointerCancel={endDrag}
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label={`Reorder ${t.title}`}
+                  >
+                    <GripIcon className="h-4 w-4" />
+                  </span>
+                )}
                 <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md bg-elevated">
                   {t.thumbnail ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -220,13 +274,9 @@ export default function TrackList({
           track={menuTrack}
           playlists={playlists}
           isPlaylistView={isPlaylistView}
-          canMoveUp={menuIndex > 0}
-          canMoveDown={menuIndex < tracks.length - 1}
           onClose={() => setMenuId(null)}
           onEdit={() => onEdit(menuTrack.id)}
           onAddToPlaylist={(plId) => onAddToPlaylist(plId, menuTrack.id)}
-          onMoveUp={() => onMove(menuTrack.id, -1)}
-          onMoveDown={() => onMove(menuTrack.id, 1)}
           onRemove={() => onRemove(menuTrack.id)}
         />
       )}

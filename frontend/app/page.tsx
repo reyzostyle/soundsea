@@ -27,7 +27,6 @@ import PlayerBar from "@/components/PlayerBar";
 import SettingsPanel from "@/components/SettingsPanel";
 import TrackEditModal from "@/components/TrackEditModal";
 import PlaylistHeader from "@/components/PlaylistHeader";
-import PlaylistEditModal from "@/components/PlaylistEditModal";
 import { MenuIcon } from "@/components/Icons";
 
 export default function Home() {
@@ -47,7 +46,6 @@ export default function Home() {
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [editingTrackId, setEditingTrackId] = useState<string | null>(null);
-  const [editingPlaylistId, setEditingPlaylistId] = useState<string | null>(null);
   const [shuffle, setShuffle] = useState(false);
   const [volume, setVolume] = useState(1);
 
@@ -486,21 +484,9 @@ export default function Home() {
     if (user) cloudRemoveFromPlaylist(playlistId, trackId).catch(() => {});
   };
 
-  const moveInPlaylist = (playlistId: string, trackId: string, dir: -1 | 1) => {
-    let reordered: string[] | undefined;
-    setPlaylists((prev) =>
-      prev.map((p) => {
-        if (p.id !== playlistId) return p;
-        const ids = [...p.trackIds];
-        const idx = ids.indexOf(trackId);
-        const j = idx + dir;
-        if (idx < 0 || j < 0 || j >= ids.length) return p;
-        [ids[idx], ids[j]] = [ids[j], ids[idx]];
-        reordered = ids;
-        return { ...p, trackIds: ids };
-      })
-    );
-    if (user && reordered) cloudReorderPlaylist(playlistId, reordered).catch(() => {});
+  const reorderPlaylistTracks = (playlistId: string, ids: string[]) => {
+    setPlaylists((prev) => prev.map((p) => (p.id === playlistId ? { ...p, trackIds: ids } : p)));
+    if (user) cloudReorderPlaylist(playlistId, ids).catch(() => {});
   };
 
   const updateTrack = (trackId: string, changes: { title: string; thumbnail: string | null }) => {
@@ -567,8 +553,8 @@ export default function Home() {
                 tracks={viewTracks}
                 onPlay={() => playPlaylist(viewPlaylist.id)}
                 onShuffle={() => shufflePlaylist(viewPlaylist.id)}
-                onEdit={() => setEditingPlaylistId(viewPlaylist.id)}
                 onShare={() => sharePlaylist(viewPlaylist)}
+                onSave={(changes) => updatePlaylist(viewPlaylist.id, changes)}
               />
               <TrackList
                 tracks={viewTracks}
@@ -581,8 +567,8 @@ export default function Home() {
                 onTogglePlay={togglePlay}
                 onAddToPlaylist={addToPlaylist}
                 onEdit={setEditingTrackId}
-                onMove={(trackId, dir) => moveInPlaylist(viewPlaylist.id, trackId, dir)}
                 onRemove={(trackId) => removeFromPlaylist(viewPlaylist.id, trackId)}
+                onReorder={(ids) => reorderPlaylistTracks(viewPlaylist.id, ids)}
               />
             </div>
           ) : (
@@ -610,7 +596,6 @@ export default function Home() {
                   onTogglePlay={togglePlay}
                   onAddToPlaylist={addToPlaylist}
                   onEdit={setEditingTrackId}
-                  onMove={() => {}}
                   onRemove={(trackId) => deleteTrack(trackId)}
                 />
               </div>
@@ -670,15 +655,6 @@ export default function Home() {
           track={trackById.get(editingTrackId)!}
           onClose={() => setEditingTrackId(null)}
           onSave={(changes) => updateTrack(editingTrackId, changes)}
-        />
-      )}
-
-      {editingPlaylistId && playlists.find((p) => p.id === editingPlaylistId) && (
-        <PlaylistEditModal
-          playlist={playlists.find((p) => p.id === editingPlaylistId)!}
-          fallbackCover={tracksFor(editingPlaylistId).find((t) => t.thumbnail)?.thumbnail ?? null}
-          onClose={() => setEditingPlaylistId(null)}
-          onSave={(changes) => updatePlaylist(editingPlaylistId, changes)}
         />
       )}
     </div>
