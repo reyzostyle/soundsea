@@ -5,6 +5,8 @@ export type Track = {
   duration: number | null;
   thumbnail: string | null;
   addedAt: number;
+  /** the YouTube/TikTok link it was downloaded from; absent on older tracks */
+  sourceUrl?: string | null;
 };
 
 export type Playlist = {

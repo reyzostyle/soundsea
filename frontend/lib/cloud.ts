@@ -20,6 +20,7 @@ export async function fetchLibrary(userId: string): Promise<{ tracks: Track[]; p
     duration: r.duration,
     thumbnail: r.thumbnail,
     addedAt: new Date(r.created_at).getTime(),
+    sourceUrl: r.source_url ?? null,
   }));
 
   const byPlaylist = new Map<string, { track_id: string; position: number }[]>();
@@ -38,7 +39,7 @@ export async function fetchLibrary(userId: string): Promise<{ tracks: Track[]; p
   return { tracks, playlists };
 }
 
-export async function cloudUpsertTrack(userId: string, t: Track, sourceUrl?: string | null) {
+export async function cloudUpsertTrack(userId: string, t: Track) {
   if (!supabase) return;
   await supabase.from("tracks").upsert({
     id: t.id,
@@ -47,7 +48,7 @@ export async function cloudUpsertTrack(userId: string, t: Track, sourceUrl?: str
     filename: t.filename,
     duration: t.duration,
     thumbnail: t.thumbnail,
-    source_url: sourceUrl ?? null,
+    source_url: t.sourceUrl ?? null,
   });
 }
 
@@ -110,6 +111,7 @@ export async function migrateLocalToCloud(userId: string, tracks: Track[], playl
         filename: t.filename,
         duration: t.duration,
         thumbnail: t.thumbnail,
+        source_url: t.sourceUrl ?? null,
       }))
     );
   }

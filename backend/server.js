@@ -198,6 +198,16 @@ app.get("/api/audio/:filename", (req, res) => {
   if (!fs.existsSync(filePath)) {
     return res.status(404).json({ error: "File not found." });
   }
+  if (typeof req.query.download === "string") {
+    // RFC 5987: ASCII fallback plus a UTF-8 filename* so non-Latin titles
+    // (Cyrillic etc.) still show up correctly in the saved file's name
+    const raw = req.query.download.replace(/[\r\n]/g, "").trim().slice(0, 150) || "track";
+    const ascii = raw.replace(/[^\x20-\x7E]/g, "_").replace(/["\\]/g, "_").trim() || "track";
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${ascii}.mp3"; filename*=UTF-8''${encodeURIComponent(raw)}.mp3`
+    );
+  }
   // sendFile supports Range requests, which makes the player seekable
   res.sendFile(filePath);
 });

@@ -411,9 +411,10 @@ export default function Home() {
         duration: data.duration ?? null,
         thumbnail: data.thumbnail ?? null,
         addedAt: Date.now(),
+        sourceUrl: url,
       };
       setTracks((prev) => [track, ...prev]);
-      if (user) cloudUpsertTrack(user.id, track, url).catch(() => {});
+      if (user) cloudUpsertTrack(user.id, track).catch(() => {});
       return true;
     } catch (e) {
       setDownloadError(e instanceof Error ? e.message : "Download failed");

@@ -4,9 +4,13 @@ import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Playlist, Track } from "@/lib/types";
 import { formatTime } from "@/lib/format";
+import { downloadFileUrl } from "@/lib/api";
 import {
   ChevronUpIcon,
+  DownloadIcon,
+  ExternalLinkIcon,
   GripIcon,
+  InfoIcon,
   MinusIcon,
   MoreIcon,
   MusicIcon,
@@ -55,8 +59,13 @@ function TrackActionSheet({
   onAddToPlaylist: (playlistId: string) => void;
   onRemove: () => void;
 }) {
-  const [addingTo, setAddingTo] = useState(false);
+  const [mode, setMode] = useState<"menu" | "add" | "details">("menu");
   const row = "flex w-full items-center gap-3 rounded-md px-3 py-3 text-left text-sm text-ink hover:bg-elevated disabled:opacity-40";
+  const backRow = (
+    <button onClick={() => setMode("menu")} className={row + " text-muted"}>
+      <ChevronUpIcon className="h-5 w-5 -rotate-90" /> Back
+    </button>
+  );
 
   return createPortal(
     <div className="fixed inset-0 z-[70] flex flex-col justify-end sm:items-center sm:justify-center">
@@ -83,11 +92,9 @@ function TrackActionSheet({
         </div>
         <div className="mb-1 h-px bg-line" />
 
-        {addingTo ? (
+        {mode === "add" ? (
           <>
-            <button onClick={() => setAddingTo(false)} className={row + " text-muted"}>
-              <ChevronUpIcon className="h-5 w-5 -rotate-90" /> Back
-            </button>
+            {backRow}
             {playlists.length === 0 ? (
               <p className="px-3 py-2 text-xs text-muted">No playlists yet. Create one from the menu.</p>
             ) : (
@@ -99,12 +106,41 @@ function TrackActionSheet({
               ))
             )}
           </>
+        ) : mode === "details" ? (
+          <>
+            {backRow}
+            {track.sourceUrl ? (
+              <a
+                href={track.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={row}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ExternalLinkIcon className="h-5 w-5 text-muted" />
+                <span className="min-w-0 flex-1">
+                  <span className="block">Open original video</span>
+                  <span className="block truncate text-xs text-muted">{track.sourceUrl}</span>
+                </span>
+              </a>
+            ) : (
+              <p className="px-3 py-2 text-xs text-muted">
+                No source link saved for this track (downloaded before this feature).
+              </p>
+            )}
+            <a href={downloadFileUrl(track.filename, track.title)} className={row} onClick={(e) => e.stopPropagation()}>
+              <DownloadIcon className="h-5 w-5 text-muted" /> Download audio file
+            </a>
+          </>
         ) : (
           <>
             <button onClick={() => { onEdit(); onClose(); }} className={row}>
-              <PencilIcon className="h-5 w-5 text-muted" /> Edit details
+              <PencilIcon className="h-5 w-5 text-muted" /> Edit
             </button>
-            <button onClick={() => setAddingTo(true)} className={row}>
+            <button onClick={() => setMode("details")} className={row}>
+              <InfoIcon className="h-5 w-5 text-muted" /> Details
+            </button>
+            <button onClick={() => setMode("add")} className={row}>
               <PlusIcon className="h-5 w-5 text-muted" /> Add to playlist
             </button>
             <button onClick={() => { onRemove(); onClose(); }} className={row + " text-red-500"}>
