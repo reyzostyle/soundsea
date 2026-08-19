@@ -11,8 +11,10 @@ RUN curl -fsSL https://deno.land/install.sh | sh
 ENV PATH="/root/.deno/bin:${PATH}"
 
 # Bump the date below to force a fresh yt-dlp install (busts Docker layer cache)
-ENV YTDLP_REFRESH=2026-06-13
-RUN pip3 install -U yt-dlp bgutil-ytdlp-pot-provider --break-system-packages
+ENV YTDLP_REFRESH=2026-08-11
+# curl_cffi lets yt-dlp impersonate a real browser's TLS fingerprint — TikTok's
+# datacenter-IP anti-bot checks fail requests without it
+RUN pip3 install -U yt-dlp bgutil-ytdlp-pot-provider curl_cffi --break-system-packages
 
 # PO token provider server — required for YouTube downloads from datacenter IPs
 RUN git clone --depth 1 https://github.com/Brainicism/bgutil-ytdlp-pot-provider.git /opt/pot \
