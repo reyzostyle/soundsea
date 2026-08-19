@@ -12,12 +12,12 @@ ENV PATH="/root/.deno/bin:${PATH}"
 
 # Bump the date below to force a fresh yt-dlp install (busts Docker layer cache)
 ENV YTDLP_REFRESH=2026-08-11
-# yt-dlp's own "curl-cffi" extra pins a curl_cffi version it actually supports —
-# installing curl_cffi standalone grabs the newest release, which yt-dlp then
-# refuses to use ("(unsupported)"), silently falling back to no impersonation.
-# Impersonation is what lets TikTok downloads pass its anti-bot check on a
-# datacenter IP.
-RUN pip3 install -U "yt-dlp[default,curl-cffi]" bgutil-ytdlp-pot-provider --break-system-packages
+# curl_cffi impersonates a real browser's TLS fingerprint, which TikTok's
+# anti-bot check on datacenter IPs requires. Pin it to 0.13.0: the "curl-cffi"
+# extras range also allows 0.15.x, which is newer but fails TikTok's challenge
+# in testing — 0.13.0 is the version confirmed working end-to-end.
+RUN pip3 install -U "yt-dlp[default,curl-cffi]" bgutil-ytdlp-pot-provider --break-system-packages \
+  && pip3 install "curl_cffi==0.13.0" --break-system-packages
 
 # PO token provider server — required for YouTube downloads from datacenter IPs
 RUN git clone --depth 1 https://github.com/Brainicism/bgutil-ytdlp-pot-provider.git /opt/pot \
