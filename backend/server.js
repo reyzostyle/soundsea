@@ -185,7 +185,22 @@ app.get("/api/health", async (req, res) => {
   } catch (e) {
     potProvider = `unreachable: ${e.message}`;
   }
-  res.json({ ok: true, cookiesFile: fs.existsSync(COOKIES_FILE), potProvider });
+  const result = { ok: true, cookiesFile: fs.existsSync(COOKIES_FILE), potProvider };
+
+  // temporary: ?probe=<url> runs yt-dlp -v --simulate against that URL and returns
+  // the tail of stderr, so we can see what's really happening on the deployed box
+  if (req.query.probe) {
+    result.verboseTail = await new Promise((resolve) => {
+      const p = spawn("yt-dlp", ["-v", "--no-playlist", "--simulate", String(req.query.probe)]);
+      let err = "";
+      p.stderr.on("data", (c) => (err += c));
+      p.on("close", () => resolve(err.split("\n").slice(-50)));
+      p.on("error", (e) => resolve([`error: ${e.message}`]));
+      setTimeout(() => p.kill("SIGKILL"), 60000);
+    });
+  }
+
+  res.json(result);
 });
 
 app.get("/api/audio/:filename", (req, res) => {
