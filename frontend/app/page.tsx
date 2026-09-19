@@ -55,6 +55,8 @@ export default function Home() {
   const [editingTrackId, setEditingTrackId] = useState<string | null>(null);
   const [studioTrackId, setStudioTrackId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  // set by Studio while it is open, so the space bar drives its preview
+  const studioToggleRef = useRef<(() => void) | null>(null);
   const [shuffle, setShuffle] = useState(false);
   const [volume, setVolume] = useState(1);
   const [playbackOpts, setPlaybackOpts] = useState<PlaybackOptions>({ fade: 0, gap: 0 });
@@ -426,6 +428,12 @@ export default function Home() {
       // don't hijack typing or a focused button/link/select
       if (t && (["INPUT", "TEXTAREA", "BUTTON", "A", "SELECT"].includes(t.tagName) || t.isContentEditable)) return;
       if (e.code === "Space" || e.key === " " || e.key === "Enter") {
+        // in Studio the space bar belongs to the edit being previewed
+        if (studioToggleRef.current) {
+          e.preventDefault();
+          studioToggleRef.current();
+          return;
+        }
         if (!currentTrack) return;
         e.preventDefault();
         togglePlay();
@@ -576,6 +584,12 @@ export default function Home() {
     setView("studio");
   };
 
+  // Studio is its own listening screen: the player bar goes away and the track it was
+  // playing stops, so the space bar and the sound both belong to the edit.
+  useEffect(() => {
+    if (view === "studio") audioRef.current?.pause();
+  }, [view]);
+
   // a studio edit is a new track at the top of the library, like a fresh download
   const addStudioEdit = (track: Track) => {
     setTracks((prev) => [track, ...prev]);
@@ -599,6 +613,20 @@ export default function Home() {
       setTracks((prev) => prev.map((t) => (t.id === trackId ? { ...t, isPublic: !isPublic } : t)));
       setNotice("Couldn't change that right now");
     }
+  };
+
+  // "Save over this track": same track, same playlists, new audio file
+  const replaceTrackFile = (trackId: string, file: { filename: string; duration: number }) => {
+    let updated: Track | undefined;
+    setTracks((prev) =>
+      prev.map((t) => {
+        if (t.id !== trackId) return t;
+        updated = { ...t, filename: file.filename, duration: file.duration };
+        return updated;
+      })
+    );
+    if (user && updated) cloudUpsertTrack(user.id, updated).catch(() => {});
+    setNotice("Track replaced with the edit");
   };
 
   // adding from Discover makes your own copy that points at the same audio file
@@ -667,6 +695,8 @@ export default function Home() {
                 trackId={studioTrackId}
                 onSelect={setStudioTrackId}
                 onSaved={addStudioEdit}
+                onReplaced={replaceTrackFile}
+                onRegisterToggle={(fn) => (studioToggleRef.current = fn)}
                 onPreviewStart={() => audioRef.current?.pause()}
                 onPlayTrack={(id) => playTrack(id, "library")}
                 mainPlaying={isPlaying}
@@ -754,6 +784,7 @@ export default function Home() {
         </div>
       )}
 
+      {view !== "studio" && (
       <PlayerBar
         track={currentTrack}
         isPlaying={isPlaying}
@@ -770,6 +801,7 @@ export default function Home() {
         onToggleShuffle={() => setShuffle((s) => !s)}
         onVolume={setVolume}
       />
+      )}
 
       <audio
         ref={audioRef}

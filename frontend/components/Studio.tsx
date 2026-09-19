@@ -16,42 +16,53 @@ import {
 } from "@/lib/studio";
 import TrackCover from "./TrackCover";
 import Slider from "./Slider";
-import { CheckIcon, PauseIcon, PlayIcon, SearchIcon, SlidersIcon, Spinner } from "./Icons";
+import { CheckIcon, ChevronUpIcon, PauseIcon, PlayIcon, SearchIcon, SlidersIcon, Spinner } from "./Icons";
 
 type Props = {
   tracks: Track[];
   trackId: string | null;
   onSelect: (trackId: string | null) => void;
-  /** a finished edit, to be added to the library */
+  /** a finished edit, to be added to the library as a new track */
   onSaved: (track: Track) => void;
+  /** a finished edit that replaces the track it was made from */
+  onReplaced: (trackId: string, file: { filename: string; duration: number }) => void;
   /** preview is about to make sound: pause the main player */
   onPreviewStart: () => void;
   onPlayTrack: (trackId: string) => void;
   /** the main player is playing: the preview gives way */
   mainPlaying: boolean;
+  /** hands the page a way to start/stop the preview (the space bar) */
+  onRegisterToggle: (toggle: (() => void) | null) => void;
 };
 
-export default function Studio({ tracks, trackId, onSelect, onSaved, onPreviewStart, onPlayTrack, mainPlaying }: Props) {
+export default function Studio({ tracks, trackId, onSelect, onSaved, onReplaced, onPreviewStart, onPlayTrack, mainPlaying, onRegisterToggle }: Props) {
   const track = trackId ? (tracks.find((t) => t.id === trackId) ?? null) : null;
 
   return (
     <div className="mx-auto w-full max-w-3xl">
-      <div className="mb-5 flex items-baseline justify-between gap-3">
-        <h1 className="text-2xl font-bold tracking-tight">Studio</h1>
+      <div className="mb-5 flex items-center gap-2">
         {track && (
-          <button onClick={() => onSelect(null)} className="text-sm text-muted hover:text-ink">
-            Change track
+          <button
+            onClick={() => onSelect(null)}
+            className="-ml-2 rounded-full p-2 text-muted transition-colors hover:bg-elevated hover:text-ink"
+            aria-label="Back to track list"
+            title="Back"
+          >
+            <ChevronUpIcon className="h-5 w-5 -rotate-90" />
           </button>
         )}
+        <h1 className="text-2xl font-bold tracking-tight">Studio</h1>
       </div>
       {track ? (
         <Editor
           key={track.id}
           track={track}
           onSaved={onSaved}
+          onReplaced={onReplaced}
           onPreviewStart={onPreviewStart}
           onPlayTrack={onPlayTrack}
           mainPlaying={mainPlaying}
+          onRegisterToggle={onRegisterToggle}
         />
       ) : (
         <TrackPicker tracks={tracks} onSelect={onSelect} />
@@ -107,28 +118,37 @@ function TrackPicker({ tracks, onSelect }: { tracks: Track[]; onSelect: (id: str
 function Editor({
   track,
   onSaved,
+  onReplaced,
   onPreviewStart,
   onPlayTrack,
   mainPlaying,
+  onRegisterToggle,
 }: {
   track: Track;
   onSaved: (track: Track) => void;
+  onReplaced: (trackId: string, file: { filename: string; duration: number }) => void;
   onPreviewStart: () => void;
   onPlayTrack: (trackId: string) => void;
   mainPlaying: boolean;
+  onRegisterToggle: (toggle: (() => void) | null) => void;
 }) {
   const [buffer, setBuffer] = useState<AudioBuffer | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [s, setS] = useState<StudioSettings | null>(null);
   const [playing, setPlaying] = useState(false);
   const [playhead, setPlayhead] = useState(0);
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving] = useState<"new" | "replace" | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState<Track | null>(null);
+  const [replaced, setReplaced] = useState(false);
   const previewRef = useRef<StudioPreview | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    setBuffer(null);
+    setS(null);
+    setPlaying(false);
+    setPlayhead(0);
     decodeTrack(audioUrl(track.filename))
       .then((buf) => {
         if (cancelled) return;
@@ -165,6 +185,13 @@ function Editor({
     }
   }, [mainPlaying]);
 
+  // the toggle the page's space-bar handler calls (kept fresh via a ref inside)
+  const toggleRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    onRegisterToggle(() => toggleRef.current());
+    return () => onRegisterToggle(null);
+  }, [onRegisterToggle]);
+
   const peaks = useMemo(() => (buffer ? computePeaks(buffer, 240) : []), [buffer]);
 
   if (loadError) return <p className="py-16 text-center text-sm text-red-500">{loadError}</p>;
@@ -194,6 +221,7 @@ function Editor({
     const next = { ...s, ...patch };
     setS(next);
     setSaved(null);
+    setReplaced(false);
     const p = previewRef.current;
     if (!p) return;
     if (restart) {
@@ -216,31 +244,42 @@ function Editor({
     }
   };
 
+  toggleRef.current = () => togglePreview();
+
   const seek = (pos: number) => {
     setPlayhead(pos);
     if (previewRef.current?.playing) startPreview(s, pos);
   };
 
-  const save = async () => {
-    setSaving(true);
+  const save = async (mode: "new" | "replace") => {
+    previewRef.current?.stop();
+    setPlaying(false);
+    setSaving(mode);
     setSaveError(null);
     try {
       const out = await renderEdit(track.filename, s);
-      const edit: Track = {
-        id: crypto.randomUUID(),
-        title: `${track.title} (${editSuffix(s)})`,
-        filename: out.filename,
-        duration: out.duration,
-        thumbnail: track.thumbnail,
-        addedAt: Date.now(),
-        sourceUrl: track.sourceUrl ?? null,
-      };
-      onSaved(edit);
-      setSaved(edit);
+      if (mode === "replace") {
+        onReplaced(track.id, out);
+        setReplaced(true);
+        setSaved(null);
+      } else {
+        const edit: Track = {
+          id: crypto.randomUUID(),
+          title: `${track.title} (${editSuffix(s)})`,
+          filename: out.filename,
+          duration: out.duration,
+          thumbnail: track.thumbnail,
+          addedAt: Date.now(),
+          sourceUrl: track.sourceUrl ?? null,
+        };
+        onSaved(edit);
+        setSaved(edit);
+        setReplaced(false);
+      }
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : "Rendering failed");
     } finally {
-      setSaving(false);
+      setSaving(null);
     }
   };
 
@@ -281,12 +320,21 @@ function Editor({
           duration={buffer.duration}
           start={s.start}
           end={s.end}
+          fadeIn={s.fadeIn}
+          fadeOut={s.fadeOut}
+          speed={s.speed}
           playhead={playhead}
           onTrim={(start, end) => update({ start, end }, true)}
+          onFade={(fadeIn, fadeOut) => update({ fadeIn, fadeOut }, true)}
           onSeek={seek}
         />
-        <div className="mt-2 flex items-center justify-between text-xs text-muted tabular-nums">
+        <div className="mt-2 flex items-center justify-between gap-3 text-xs text-muted tabular-nums">
           <span>Start {formatTime(s.start)}</span>
+          <span className="truncate">
+            {s.fadeIn || s.fadeOut
+              ? `Fade in ${s.fadeIn.toFixed(1)}s · out ${s.fadeOut.toFixed(1)}s`
+              : "Drag the top corners to fade"}
+          </span>
           <span>End {formatTime(s.end)}</span>
         </div>
       </div>
@@ -311,42 +359,38 @@ function Editor({
         <Slider label="Speed" value={s.speed} min={0.5} max={1.5} step={0.01} display={`${s.speed.toFixed(2)}×`} onChange={(v) => update({ speed: v })} />
         <Slider label="Bass" value={s.bass} min={0} max={15} step={0.5} display={s.bass ? `+${s.bass} dB` : "Off"} onChange={(v) => update({ bass: v })} />
         <Slider label="Reverb" value={s.reverb} min={0} max={1} step={0.01} display={s.reverb ? `${Math.round(s.reverb * 100)}%` : "Off"} onChange={(v) => update({ reverb: v })} />
-        <Slider
-          label="Fade in"
-          value={s.fadeIn}
-          min={0}
-          max={Math.min(5, outLen / 2)}
-          step={0.1}
-          display={s.fadeIn ? `${s.fadeIn.toFixed(1)} s` : "Off"}
-          onChange={(v) => update({ fadeIn: v }, true)}
-        />
-        <Slider
-          label="Fade out"
-          value={s.fadeOut}
-          min={0}
-          max={Math.min(10, outLen / 2)}
-          step={0.1}
-          display={s.fadeOut ? `${s.fadeOut.toFixed(1)} s` : "Off"}
-          onChange={(v) => update({ fadeOut: v }, true)}
-        />
       </div>
 
       <div className="flex flex-col gap-3 border-t border-line pt-5 sm:flex-row sm:items-center">
         <button
-          onClick={save}
-          disabled={saving}
+          onClick={() => save("new")}
+          disabled={!!saving}
           className="flex h-11 items-center justify-center gap-2 rounded-full bg-brand px-6 text-sm font-semibold text-on-brand transition-colors enabled:hover:bg-brand-hover disabled:opacity-60"
         >
-          {saving ? <Spinner className="h-4 w-4" /> : <SlidersIcon className="h-4 w-4" />}
-          {saving ? "Rendering" : "Save as new track"}
+          {saving === "new" ? <Spinner className="h-4 w-4" /> : <SlidersIcon className="h-4 w-4" />}
+          {saving === "new" ? "Rendering" : "Save as new track"}
+        </button>
+        <button
+          onClick={() => save("replace")}
+          disabled={!!saving}
+          className="flex h-11 items-center justify-center gap-2 rounded-full border border-line px-6 text-sm font-medium text-ink transition-colors enabled:hover:bg-elevated disabled:opacity-60"
+        >
+          {saving === "replace" && <Spinner className="h-4 w-4" />}
+          {saving === "replace" ? "Rendering" : "Save over this track"}
         </button>
         {saved && (
           <div className="flex items-center gap-3 text-sm text-muted">
             <CheckIcon className="h-4 w-4 text-accent" />
-            <span>Saved to your library.</span>
+            <span>Saved as a new track.</span>
             <button onClick={() => onPlayTrack(saved.id)} className="font-medium text-ink hover:underline">
               Play it
             </button>
+          </div>
+        )}
+        {replaced && (
+          <div className="flex items-center gap-2 text-sm text-muted">
+            <CheckIcon className="h-4 w-4 text-accent" />
+            <span>This track now plays the edit.</span>
           </div>
         )}
         {saveError && <p className="text-sm text-red-500">{saveError}</p>}
@@ -355,64 +399,105 @@ function Editor({
   );
 }
 
-// Waveform with two trim handles. Drag a handle to trim; tap anywhere else to move
-// the playhead there.
+// Waveform with trim handles at the edges and fade handles in the top corners, the
+// way a clip's audio fades work in Premiere: drag a corner inwards to make the ramp
+// longer. Anywhere else, press and drag scrubs the playhead.
 function Waveform({
   peaks,
   duration,
   start,
   end,
+  fadeIn,
+  fadeOut,
+  speed,
   playhead,
   onTrim,
+  onFade,
   onSeek,
 }: {
   peaks: number[];
   duration: number;
   start: number;
   end: number;
+  fadeIn: number;
+  fadeOut: number;
+  speed: number;
   playhead: number;
   onTrim: (start: number, end: number) => void;
+  onFade: (fadeIn: number, fadeOut: number) => void;
   onSeek: (pos: number) => void;
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
-  const [dragging, setDragging] = useState<"start" | "end" | null>(null);
+  // a ref, not state: the first pointermove can land in the same tick as the
+  // pointerdown that started the drag, before a state update would be visible
+  const dragRef = useRef<"start" | "end" | "fadeIn" | "fadeOut" | "scrub" | null>(null);
   const pct = (t: number) => `${(t / duration) * 100}%`;
+
+  // fades are seconds of the *result*; on this ruler of original seconds they are
+  // that much longer or shorter depending on the speed
+  const region = end - start;
+  const maxFade = region / 2;
+  const fadeInAt = Math.min(start + fadeIn * speed, start + maxFade);
+  const fadeOutAt = Math.max(end - fadeOut * speed, end - maxFade);
 
   const timeAt = (clientX: number) => {
     const r = boxRef.current!.getBoundingClientRect();
     return Math.min(duration, Math.max(0, ((clientX - r.left) / r.width) * duration));
   };
+  const x = (t: number) => (boxRef.current ? (t / duration) * boxRef.current.getBoundingClientRect().width : 0);
 
   const onDown = (e: React.PointerEvent) => {
     const r = boxRef.current!.getBoundingClientRect();
-    const x = e.clientX - r.left;
-    const sx = (start / duration) * r.width;
-    const ex = (end / duration) * r.width;
+    const px = e.clientX - r.left;
+    const py = e.clientY - r.top;
     const grab = 18;
-    if (Math.abs(x - sx) <= grab || Math.abs(x - ex) <= grab) {
-      setDragging(Math.abs(x - sx) <= Math.abs(x - ex) ? "start" : "end");
-      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-    } else {
-      const t = timeAt(e.clientX);
-      if (t > start && t < end) onSeek(t);
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+
+    // fade corners live in the top strip, so they never fight the trim handles
+    if (py <= 28) {
+      const dIn = Math.abs(px - x(fadeInAt));
+      const dOut = Math.abs(px - x(fadeOutAt));
+      if (Math.min(dIn, dOut) <= grab) {
+        dragRef.current = dIn <= dOut ? "fadeIn" : "fadeOut";
+        return;
+      }
     }
+    const dStart = Math.abs(px - x(start));
+    const dEnd = Math.abs(px - x(end));
+    if (Math.min(dStart, dEnd) <= grab) {
+      dragRef.current = dStart <= dEnd ? "start" : "end";
+      return;
+    }
+    dragRef.current = "scrub";
+    onSeek(Math.min(Math.max(timeAt(e.clientX), start), end));
   };
 
   const onMove = (e: React.PointerEvent) => {
-    if (!dragging) return;
+    const drag = dragRef.current;
+    if (!drag) return;
     const t = timeAt(e.clientX);
-    if (dragging === "start") onTrim(Math.min(t, end - 0.5), end);
-    else onTrim(start, Math.max(t, start + 0.5));
+    if (drag === "start") onTrim(Math.min(t, end - 0.5), end);
+    else if (drag === "end") onTrim(start, Math.max(t, start + 0.5));
+    else if (drag === "scrub") onSeek(Math.min(Math.max(t, start), end));
+    else if (drag === "fadeIn") onFade(Math.min(Math.max(t - start, 0) / speed, maxFade / speed), fadeOut);
+    else onFade(fadeIn, Math.min(Math.max(end - t, 0) / speed, maxFade / speed));
   };
+
+  const stop = () => {
+    dragRef.current = null;
+  };
+
+  // the ramps are drawn in percentages, so they follow the box at any width
+  const u = (t: number) => (t / duration) * 100;
 
   return (
     <div
       ref={boxRef}
-      className="relative h-24 cursor-pointer touch-none select-none"
+      className="relative h-28 touch-none select-none"
       onPointerDown={onDown}
       onPointerMove={onMove}
-      onPointerUp={() => setDragging(null)}
-      onPointerCancel={() => setDragging(null)}
+      onPointerUp={stop}
+      onPointerCancel={stop}
     >
       <div className="absolute inset-0 flex items-center gap-px">
         {peaks.map((p, i) => {
@@ -427,14 +512,42 @@ function Waveform({
           );
         })}
       </div>
+
+      {/* the fade envelope: what it takes away is dimmed, the ramp itself is a line */}
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full">
+        {fadeIn > 0 && (
+          <polygon points={`${u(start)},100 ${u(fadeInAt)},0 ${u(start)},0`} className="fill-app/75" />
+        )}
+        {fadeOut > 0 && (
+          <polygon points={`${u(fadeOutAt)},0 ${u(end)},100 ${u(end)},0`} className="fill-app/75" />
+        )}
+        <polyline
+          points={`${u(start)},100 ${u(fadeInAt)},0 ${u(fadeOutAt)},0 ${u(end)},100`}
+          className="fill-none stroke-accent"
+          strokeWidth={1}
+          vectorEffect="non-scaling-stroke"
+        />
+      </svg>
+
       {/* trim handles */}
       {[start, end].map((t, i) => (
-        <div key={i} className="absolute inset-y-0 -ml-[3px] w-1.5 rounded-full bg-accent" style={{ left: pct(t) }}>
+        <div key={i} className="absolute inset-y-0 -ml-[3px] w-1.5 cursor-ew-resize rounded-full bg-accent" style={{ left: pct(t) }}>
           <div className="absolute top-1/2 left-1/2 h-8 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent" />
         </div>
       ))}
+
+      {/* fade handles */}
+      {[fadeInAt, fadeOutAt].map((t, i) => (
+        <div
+          key={i}
+          className="absolute -top-1 -ml-2 h-4 w-4 cursor-ew-resize rounded-full border-2 border-accent bg-app"
+          style={{ left: pct(t) }}
+          title={i === 0 ? "Fade in" : "Fade out"}
+        />
+      ))}
+
       {/* playhead */}
-      {playhead > start && playhead < end && (
+      {playhead >= start && playhead <= end && (
         <div className="pointer-events-none absolute inset-y-0 w-px bg-ink" style={{ left: pct(playhead) }} />
       )}
     </div>
