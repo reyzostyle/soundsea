@@ -80,6 +80,55 @@ function isTikTokMusicUrl(finalUrl) {
   }
 }
 
+// TikTok thumbnail links are signed and expire after a few days, so a stored URL
+// turns into a broken image. Fetch the picture once, center-crop it to a small
+// square JPEG with ffmpeg and hand back a data URL the client can keep forever.
+// Falls back to null (the caller keeps the original URL) if anything goes wrong.
+async function thumbnailToDataUrl(src) {
+  if (typeof src !== "string" || !/^https?:\/\//i.test(src)) return null;
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    const r = await fetch(src, { signal: controller.signal, headers: { "User-Agent": "Mozilla/5.0" } });
+    clearTimeout(timer);
+    if (!r.ok) return null;
+    const input = Buffer.from(await r.arrayBuffer());
+
+    const jpeg = await new Promise((resolve) => {
+      const ff = spawn("ffmpeg", [
+        "-loglevel", "error",
+        "-i", "pipe:0",
+        "-vf", "crop='min(iw,ih)':'min(iw,ih)',scale=256:256",
+        "-frames:v", "1",
+        "-q:v", "4",
+        "-f", "image2", "-c:v", "mjpeg",
+        "pipe:1",
+      ]);
+      const chunks = [];
+      const kill = setTimeout(() => ff.kill("SIGKILL"), 10000);
+      ff.stdout.on("data", (c) => chunks.push(c));
+      ff.on("error", () => resolve(null));
+      ff.on("close", (code) => {
+        clearTimeout(kill);
+        resolve(code === 0 && chunks.length ? Buffer.concat(chunks) : null);
+      });
+      ff.stdin.on("error", () => {});
+      ff.stdin.end(input);
+    });
+    return jpeg ? `data:image/jpeg;base64,${jpeg.toString("base64")}` : null;
+  } catch {
+    return null;
+  }
+}
+
+function cookieArgs() {
+  // datacenter IP is flagged: cookies pass the bot check, and the "tv"
+  // client avoids the SABR-only streaming that skips web_safari formats
+  return fs.existsSync(COOKIES_FILE)
+    ? ["--cookies", COOKIES_FILE, "--extractor-args", "youtube:player_client=tv"]
+    : [];
+}
+
 app.post("/api/download", async (req, res) => {
   const url = validateUrl(req.body && req.body.url);
   if (!url) {
@@ -111,13 +160,7 @@ app.post("/api/download", async (req, res) => {
     "-o", path.join(DOWNLOADS_DIR, `${id}.%(ext)s`),
   ];
 
-  if (fs.existsSync(COOKIES_FILE)) {
-    // datacenter IP is flagged: cookies pass the bot check, and the "tv"
-    // client avoids the SABR-only streaming that skips web_safari formats
-    args.push("--cookies", COOKIES_FILE, "--extractor-args", "youtube:player_client=tv");
-  }
-
-  args.push(url);
+  args.push(...cookieArgs(), url);
 
   const proc = spawn("yt-dlp", args);
   let stdout = "";
@@ -134,7 +177,7 @@ app.post("/api/download", async (req, res) => {
     }
   });
 
-  proc.on("close", (code) => {
+  proc.on("close", async (code) => {
     clearTimeout(timer);
     if (res.headersSent) return;
 
@@ -167,12 +210,42 @@ app.post("/api/download", async (req, res) => {
       // metadata is best-effort; the file downloaded fine
     }
 
+    const rawThumb = typeof meta.thumbnail === "string" ? meta.thumbnail : null;
     res.json({
       title: meta.title || "Unknown title",
       filename,
       duration: typeof meta.duration === "number" ? meta.duration : null,
-      thumbnail: typeof meta.thumbnail === "string" ? meta.thumbnail : null,
+      thumbnail: (await thumbnailToDataUrl(rawThumb)) || rawThumb,
     });
+  });
+});
+
+// Re-fetch the cover for a track whose stored thumbnail no longer loads (tracks saved
+// before covers were inlined still point at expired TikTok links). Metadata only, no
+// audio download.
+app.post("/api/thumbnail", (req, res) => {
+  const url = validateUrl(req.body && req.body.url);
+  if (!url) return res.status(400).json({ error: "Invalid URL." });
+
+  const proc = spawn("yt-dlp", ["-j", "--skip-download", "--no-playlist", ...cookieArgs(), url]);
+  let stdout = "";
+  proc.stdout.on("data", (chunk) => (stdout += chunk));
+  const timer = setTimeout(() => proc.kill("SIGKILL"), 60 * 1000);
+  proc.on("error", () => {
+    clearTimeout(timer);
+    if (!res.headersSent) res.status(500).json({ error: "yt-dlp unavailable." });
+  });
+  proc.on("close", async () => {
+    clearTimeout(timer);
+    if (res.headersSent) return;
+    let meta = {};
+    try {
+      const jsonLine = stdout.split("\n").find((l) => l.trim().startsWith("{"));
+      if (jsonLine) meta = JSON.parse(jsonLine);
+    } catch {}
+    const thumbnail = await thumbnailToDataUrl(meta.thumbnail);
+    if (!thumbnail) return res.status(404).json({ error: "No thumbnail found." });
+    res.json({ thumbnail });
   });
 });
 

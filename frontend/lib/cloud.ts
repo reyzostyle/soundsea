@@ -8,7 +8,14 @@ export async function fetchLibrary(userId: string): Promise<{ tracks: Track[]; p
   if (!supabase) return { tracks: [], playlists: [] };
 
   const [{ data: trackRows }, { data: plRows }, { data: ptRows }] = await Promise.all([
-    supabase.from("tracks").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
+    supabase
+      .from("tracks")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      // tracks pushed up together in the first-sign-in migration share one created_at;
+      // without a tiebreaker Postgres returns those in a different order each load
+      .order("id", { ascending: true }),
     supabase.from("playlists").select("*").eq("user_id", userId).order("created_at", { ascending: true }),
     supabase.from("playlist_tracks").select("playlist_id, track_id, position"),
   ]);
@@ -49,6 +56,7 @@ export async function cloudUpsertTrack(userId: string, t: Track) {
     duration: t.duration,
     thumbnail: t.thumbnail,
     source_url: t.sourceUrl ?? null,
+    created_at: new Date(t.addedAt).toISOString(),
   });
 }
 
@@ -112,6 +120,8 @@ export async function migrateLocalToCloud(userId: string, tracks: Track[], playl
         duration: t.duration,
         thumbnail: t.thumbnail,
         source_url: t.sourceUrl ?? null,
+        // the track's real added time, not one shared now() for the whole batch
+        created_at: new Date(t.addedAt).toISOString(),
       }))
     );
   }

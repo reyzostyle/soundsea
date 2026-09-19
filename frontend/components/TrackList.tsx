@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { Playlist, Track } from "@/lib/types";
 import { formatTime } from "@/lib/format";
 import { downloadFileUrl } from "@/lib/api";
+import TrackCover from "./TrackCover";
 import {
   ChevronUpIcon,
   DownloadIcon,
@@ -76,14 +77,7 @@ function TrackActionSheet({
         {/* track header */}
         <div className="mb-1 flex items-center gap-3 px-2 py-2">
           <div className="h-11 w-11 shrink-0 overflow-hidden rounded-md bg-elevated">
-            {track.thumbnail ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={track.thumbnail} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center">
-                <MusicIcon className="h-5 w-5 text-muted" />
-              </div>
-            )}
+            <TrackCover track={track} className="h-full w-full" />
           </div>
           <p className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{track.title}</p>
           <button onClick={onClose} className="rounded-md p-1 text-muted hover:bg-elevated hover:text-ink" aria-label="Close">
@@ -264,14 +258,7 @@ export default function TrackList({
                   </span>
                 )}
                 <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md bg-elevated">
-                  {t.thumbnail ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={t.thumbnail} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center">
-                      <MusicIcon className="h-5 w-5 text-muted" />
-                    </div>
-                  )}
+                  <TrackCover track={t} className="h-full w-full" />
                   <div
                     className={`absolute inset-0 flex items-center justify-center bg-black/50 transition-opacity ${
                       isCurrent ? "" : "opacity-0 group-hover:opacity-100"

@@ -3,7 +3,8 @@
 import { CSSProperties } from "react";
 import { RepeatMode, Track } from "@/lib/types";
 import { formatTime } from "@/lib/format";
-import { MusicIcon, NextIcon, PauseIcon, PlayIcon, PrevIcon, RepeatIcon, ShuffleIcon, VolumeIcon } from "./Icons";
+import TrackCover from "./TrackCover";
+import { NextIcon, PauseIcon, PlayIcon, PrevIcon, RepeatIcon, ShuffleIcon, VolumeIcon } from "./Icons";
 
 type Props = {
   track: Track | null;
@@ -51,14 +52,7 @@ export default function PlayerBar({
     <div className="shrink-0 border-t border-line bg-panel">
       <div className="mx-auto flex max-w-6xl flex-col gap-1.5 px-4 py-3 md:px-8">
         <div className="flex items-center gap-3">
-          {track?.thumbnail ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={track.thumbnail} alt="" className="h-11 w-11 shrink-0 rounded-md object-cover" />
-          ) : (
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-elevated">
-              <MusicIcon className="h-5 w-5 text-muted" />
-            </div>
-          )}
+          <TrackCover track={track} className="h-11 w-11 shrink-0 rounded-md" />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-ink">{track ? track.title : "Nothing playing"}</p>
             {!track && <p className="truncate text-xs text-muted">Download a track to get started</p>}

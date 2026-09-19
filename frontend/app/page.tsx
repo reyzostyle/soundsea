@@ -6,6 +6,7 @@ import { loadPlaylists, loadTracks, savePlaylists, saveTracks } from "@/lib/stor
 import { API_BASE, audioUrl } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import { squareCoverUrl } from "@/lib/image";
+import { setThumbRepairHandler } from "@/lib/thumbRepair";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   cloudAddToPlaylist,
@@ -151,6 +152,23 @@ export default function Home() {
       cancelled = true;
     };
   }, [user, hydrated]);
+
+  // A cover that stopped loading came back fresh from the backend: keep it locally and
+  // in the account so the repair only ever happens once.
+  useEffect(() => {
+    setThumbRepairHandler((trackId, thumbnail) => {
+      let updated: Track | undefined;
+      setTracks((prev) =>
+        prev.map((t) => {
+          if (t.id !== trackId) return t;
+          updated = { ...t, thumbnail };
+          return updated;
+        })
+      );
+      if (user && updated) cloudUpsertTrack(user.id, updated).catch(() => {});
+    });
+    return () => setThumbRepairHandler(null);
+  }, [user]);
 
   const trackById = useMemo(() => new Map(tracks.map((t) => [t.id, t])), [tracks]);
   const currentTrack = currentId ? (trackById.get(currentId) ?? null) : null;
