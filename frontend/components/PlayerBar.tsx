@@ -49,7 +49,7 @@ export default function PlayerBar({
   const pct = total ? Math.min(100, (position / total) * 100) : 0;
 
   return (
-    <div className="shrink-0 border-t border-line bg-panel">
+    <div className="relative shrink-0 border-t border-line bg-app">
       <div className="mx-auto flex max-w-6xl flex-col gap-1.5 px-4 py-3 md:px-8">
         <div className="flex items-center gap-3">
           <TrackCover track={track} className="h-11 w-11 shrink-0 rounded-md" />
@@ -129,7 +129,7 @@ export default function PlayerBar({
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-[11px] text-muted tabular-nums">
+        <div className="flex items-center gap-2 font-pixel text-[11px] text-muted tabular-nums">
           <span className="w-10 text-right">{formatTime(position)}</span>
           <input
             type="range"

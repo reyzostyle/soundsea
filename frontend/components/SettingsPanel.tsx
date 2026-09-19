@@ -9,7 +9,7 @@ export default function SettingsPanel() {
 
   return (
     <div className="max-w-xl">
-      <h1 className="mb-5 text-xl font-semibold tracking-tight">Settings</h1>
+      <h1 className="mb-5 font-pixel text-2xl">Settings</h1>
 
       <div className="flex flex-col gap-3">
         <section className="flex items-center justify-between rounded-lg border border-line bg-panel px-4 py-3">

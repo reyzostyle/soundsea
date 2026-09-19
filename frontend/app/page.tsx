@@ -542,10 +542,12 @@ export default function Home() {
         <button onClick={() => setSidebarOpen(true)} aria-label="Open menu" className="p-1 text-muted hover:text-ink">
           <MenuIcon />
         </button>
-        <span className="font-semibold tracking-tight">SoundSea</span>
+        <span className="font-pixel text-lg">SoundSea</span>
       </header>
 
-      <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1">
+      <div className="relative flex min-h-0 flex-1">
+      <div aria-hidden className="sea-pixels pointer-events-none absolute inset-x-0 bottom-0 h-[448px]" />
+      <div className="relative mx-auto flex min-h-0 w-full max-w-6xl flex-1">
         <Sidebar
           playlists={playlists}
           trackCount={tracks.length}
@@ -596,8 +598,8 @@ export default function Home() {
               <div className="shrink-0 px-4 pt-5 md:px-8 md:pt-8">
                 <DownloadForm downloading={downloading} error={downloadError} onDownload={handleDownload} />
                 <div className="mt-6 mb-3 flex items-baseline justify-between gap-3">
-                  <h1 className="truncate text-xl font-semibold tracking-tight">Library</h1>
-                  <span className="shrink-0 text-sm text-muted">
+                  <h1 className="truncate font-pixel text-2xl">Library</h1>
+                  <span className="shrink-0 font-pixel text-sm text-muted">
                     {viewTracks.length} {viewTracks.length === 1 ? "track" : "tracks"}
                   </span>
                 </div>
@@ -621,6 +623,7 @@ export default function Home() {
             </div>
           )}
         </main>
+      </div>
       </div>
 
       <PlayerBar

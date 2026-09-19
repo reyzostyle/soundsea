@@ -103,12 +103,12 @@ export default function Sidebar({
     <>
       {open && <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={onClose} />}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col gap-1 overflow-y-auto border-r border-line bg-panel p-3 pb-6 transition-transform duration-200 ease-out md:static md:z-auto md:w-60 md:shrink-0 md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col gap-1 overflow-y-auto border-r border-line bg-panel p-3 pb-6 md:bg-transparent transition-transform duration-200 ease-out md:static md:z-auto md:w-60 md:shrink-0 md:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         } ${drag ? "select-none" : ""}`}
       >
         <div className="mb-4 flex items-center justify-between px-2 pt-1 md:hidden">
-          <span className="text-lg font-semibold tracking-tight text-ink">SoundSea</span>
+          <span className="font-pixel text-xl text-ink">SoundSea</span>
           <button className="p-1 text-muted hover:text-ink" onClick={onClose} aria-label="Close menu">
             <XIcon />
           </button>
@@ -126,7 +126,7 @@ export default function Sidebar({
         </button>
 
         <div className="mt-5 mb-1 flex items-center justify-between px-3">
-          <span className="text-xs font-semibold tracking-wider text-muted uppercase">Playlists</span>
+          <span className="font-pixel text-xs tracking-wider text-muted uppercase">Playlists</span>
           <button
             className="text-muted hover:text-ink"
             onClick={() => setCreating(true)}

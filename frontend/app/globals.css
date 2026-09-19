@@ -43,6 +43,11 @@
   --color-brand: #0e7490;
   --color-brand-hover: #0b5e75;
 
+  /* Geist for everything you read; Geist Pixel for the few display bits (headings,
+     labels, durations) that give the app its character */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-pixel: var(--font-geist-pixel-square), ui-monospace, monospace;
+
   --radius-md: 6px;
   --radius-lg: 8px;
 }
@@ -116,6 +121,20 @@ body {
     background-color 0.25s ease,
     color 0.2s ease,
     border-color 0.25s ease !important;
+}
+
+/* The surf behind the library: a dithered pixel mask made from an aerial beach photo
+   (public/wave-pixels.png, drawn at 8px cells so it stays crisp at native size),
+   filled with the text color so it is white on dark and ink on light. Kept faint on
+   purpose: it is texture, not a picture. */
+.sea-pixels {
+  background-color: var(--c-ink);
+  opacity: 0.07;
+  -webkit-mask: url(/wave-pixels.png) center bottom / auto no-repeat;
+  mask: url(/wave-pixels.png) center bottom / auto no-repeat;
+}
+[data-theme="light"] .sea-pixels {
+  opacity: 0.06;
 }
 
 /* Seek bar: the filled portion is driven by the --fill CSS variable set inline */

@@ -211,7 +211,7 @@ export default function TrackList({
 
   if (tracks.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-line px-6 py-16 text-center">
+      <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
         <MusicIcon className="h-8 w-8 text-muted/60" />
         <p className="max-w-sm text-sm text-muted">{emptyHint}</p>
       </div>
@@ -223,7 +223,7 @@ export default function TrackList({
 
   return (
     <>
-      <ul className={`divide-y divide-line/70 overflow-hidden rounded-lg border border-line bg-panel ${drag ? "select-none" : ""}`}>
+      <ul className={`-mx-3 ${drag ? "select-none" : ""}`}>
         {tracks.map((t, index) => {
           const isCurrent = t.id === currentId;
           const isDragged = drag?.id === t.id;
@@ -234,14 +234,14 @@ export default function TrackList({
               className={
                 drag
                   ? isDragged
-                    ? "relative z-10 scale-[1.01] bg-elevated shadow-lg transition-none"
+                    ? "relative z-10 scale-[1.01] rounded-lg bg-elevated shadow-lg transition-none"
                     : "transition-transform duration-150 ease-out"
                   : ""
               }
               style={drag ? { transform: `translateY(${isDragged ? drag.dy : rowShift(index)}px)` } : undefined}
             >
               <div
-                className="group flex cursor-pointer items-center gap-3 px-3 py-2.5 transition-colors hover:bg-elevated/60"
+                className="group flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-elevated/60"
                 onClick={() => (isCurrent ? onTogglePlay() : onPlay(t.id))}
               >
                 {canDrag && (
@@ -273,7 +273,7 @@ export default function TrackList({
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className={`truncate text-sm font-medium ${isCurrent ? "text-accent" : "text-ink"}`}>{t.title}</p>
-                  <p className="text-xs text-muted">{formatTime(t.duration)}</p>
+                  <p className="font-pixel text-xs text-muted">{formatTime(t.duration)}</p>
                 </div>
                 <button
                   onClick={(e) => {
