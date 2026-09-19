@@ -92,8 +92,8 @@ export default function Discover({ myTracks, myUserId, onAdd, onPreviewStart, ma
   const tab = (value: "popular" | "new", label: string) => (
     <button
       onClick={() => setSort(value)}
-      className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-        sort === value ? "bg-elevated text-ink" : "text-muted hover:text-ink"
+      className={`relative z-10 w-24 rounded-full py-1.5 text-sm font-medium transition-colors ${
+        sort === value ? "text-ink" : "text-muted hover:text-ink"
       }`}
     >
       {label}
@@ -114,7 +114,11 @@ export default function Discover({ myTracks, myUserId, onAdd, onPreviewStart, ma
           className="h-full min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-muted/70"
         />
       </div>
-      <div className="mb-4 flex gap-1">
+      <div className="relative mb-4 flex w-fit rounded-full bg-elevated/60 p-1">
+        <span
+          className="absolute inset-y-1 w-[calc(50%-0.25rem)] rounded-full bg-elevated transition-transform duration-300 ease-out"
+          style={{ transform: `translateX(${sort === "new" ? "100%" : "0%"})` }}
+        />
         {tab("popular", "Popular")}
         {tab("new", "New")}
       </div>

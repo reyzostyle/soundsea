@@ -18,14 +18,25 @@ type Props = {
 
 // Settings reads as one page of rows, like the library does: a heading, a line of
 // explanation, the control. No cards — those were the only panels left in the app.
-function Row({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+function Row({
+  title,
+  hint,
+  align = "stretch",
+  children,
+}: {
+  title: string;
+  hint?: string;
+  /** small controls sit at the right edge; wide ones fill the row */
+  align?: "stretch" | "end";
+  children: React.ReactNode;
+}) {
   return (
-    <section className="flex flex-col gap-3 border-t border-line py-6 sm:flex-row sm:items-start sm:gap-8">
+    <section className="flex flex-col gap-3 border-t border-line py-6 sm:flex-row sm:items-center sm:gap-8">
       <div className="sm:w-52 sm:shrink-0">
         <h2 className="text-sm font-medium text-ink">{title}</h2>
         {hint && <p className="mt-1 text-xs leading-relaxed text-balance text-muted">{hint}</p>}
       </div>
-      <div className="min-w-0 flex-1">{children}</div>
+      <div className={`min-w-0 flex-1 ${align === "end" ? "flex justify-start sm:justify-end" : ""}`}>{children}</div>
     </section>
   );
 }
@@ -41,14 +52,19 @@ export default function SettingsPanel({ playbackOpts, onPlaybackOpts, offline }:
       <div className="border-b border-line">
         <section className="pb-6">{user ? <ProfileEditor /> : <AuthButton />}</section>
 
-        <Row title="Theme">
-          <div className="flex w-fit gap-1 rounded-full bg-elevated p-1">
+        <Row title="Theme" align="end">
+          {/* the knob slides between the two, rather than blinking from one to the other */}
+          <div className="relative flex w-fit rounded-full bg-elevated p-1">
+            <span
+              className="absolute inset-y-1 w-[calc(50%-0.25rem)] rounded-full bg-app transition-transform duration-300 ease-out"
+              style={{ transform: `translateX(${theme === "dark" ? "100%" : "0%"})` }}
+            />
             {(["light", "dark"] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => setTheme(t)}
-                className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                  theme === t ? "bg-app text-ink" : "text-muted hover:text-ink"
+                className={`relative z-10 flex w-24 items-center justify-center gap-1.5 rounded-full py-1.5 text-sm font-medium transition-colors ${
+                  theme === t ? "text-ink" : "text-muted hover:text-ink"
                 }`}
               >
                 {t === "light" ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
@@ -58,7 +74,7 @@ export default function SettingsPanel({ playbackOpts, onPlaybackOpts, offline }:
           </div>
         </Row>
 
-        <Row title="Fade" hint="Each track eases in and out. Drag an end to set it.">
+        <Row title="Fade" hint="One track eases out as the next eases in. Drag out from the middle.">
           <FadeControl value={playbackOpts.fade} onChange={(fade) => onPlaybackOpts({ ...playbackOpts, fade })} />
           <p className="mt-2 text-xs text-muted tabular-nums">
             {playbackOpts.fade ? `${playbackOpts.fade.toFixed(1)} s at each end` : "Off"}
@@ -80,7 +96,7 @@ export default function SettingsPanel({ playbackOpts, onPlaybackOpts, offline }:
         {offline.supported && (
           <Row title="Offline" hint="Keep the library on this device and play it with no signal.">
             <div className="flex items-center justify-between gap-4">
-              <p className="text-sm text-ink">Keep library on this device</p>
+              <p className="text-sm text-ink">Save tracks here</p>
               <button
                 role="switch"
                 aria-checked={offline.enabled}
@@ -108,7 +124,7 @@ export default function SettingsPanel({ playbackOpts, onPlaybackOpts, offline }:
           </Row>
         )}
 
-        <Row title="Support" hint="Something broken or missing? Say so in Discord.">
+        <Row title="Support" hint="Something broken or missing? Say so in Discord." align="end">
           <a
             href="https://discord.gg/VPQ3xncf5Q"
             target="_blank"

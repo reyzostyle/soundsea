@@ -2,17 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 
-// The fade, drawn the way a timeline draws a transition: an audio clip with a block
-// at each end holding the crossing lines, and you drag the block's inner edge to make
-// it longer or shorter. Both ends are the same length, because it is one setting.
+// The handover between two tracks, drawn at the cut like a timeline does it: the
+// track that is ending on the left, the one starting on the right, and a transition
+// block on each side of the join. Drag outwards from the middle to make the fade
+// longer — that is the whole gesture.
 
 const MAX = 10; // seconds
-const SPAN = 20; // seconds across the clip
+const SPAN = 24; // seconds across the lane
 
 // a fixed, tame waveform so the lane reads as audio without pretending to be a file
-const BARS = Array.from({ length: 96 }, (_, i) => {
+const BARS = Array.from({ length: 110 }, (_, i) => {
   const wave = Math.sin(i * 0.7) * 0.25 + Math.sin(i * 0.23) * 0.3 + Math.sin(i * 1.9) * 0.12;
-  return 0.42 + Math.abs(wave) * 0.55;
+  return 0.4 + Math.abs(wave) * 0.55;
 });
 
 export default function FadeControl({ value, onChange }: { value: number; onChange: (v: number) => void }) {
@@ -30,13 +31,13 @@ export default function FadeControl({ value, onChange }: { value: number; onChan
   }, []);
 
   const perSec = width / SPAN;
-  const fadePx = Math.min(value * perSec, width / 2);
+  const mid = width / 2;
+  const fadePx = Math.min(value * perSec, mid);
   const clamp = (v: number) => Math.min(MAX, Math.max(0, Math.round(v * 2) / 2));
 
   const set = (e: React.PointerEvent) => {
     const r = boxRef.current!.getBoundingClientRect();
-    const x = e.clientX - r.left;
-    onChange(clamp((x < r.width / 2 ? x : r.width - x) / perSec));
+    onChange(clamp(Math.abs(e.clientX - r.left - r.width / 2) / perSec));
   };
 
   const onKey = (e: React.KeyboardEvent) => {
@@ -45,19 +46,6 @@ export default function FadeControl({ value, onChange }: { value: number; onChan
     e.preventDefault();
     onChange(clamp(value + step));
   };
-
-  // one fade block: the crossing lines inside it, a grab edge on the inner side
-  const block = (side: "left" | "right") => (
-    <div
-      className={`absolute inset-y-0 overflow-hidden bg-app/55 ${side === "left" ? "left-0 border-r" : "right-0 border-l"} border-accent`}
-      style={{ width: fadePx }}
-    >
-      <svg className="h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-        <polyline points="0,100 100,0" className="fill-none stroke-accent" strokeWidth={1} vectorEffect="non-scaling-stroke" />
-        <polyline points="0,0 100,100" className="fill-none stroke-accent/45" strokeWidth={1} vectorEffect="non-scaling-stroke" />
-      </svg>
-    </div>
-  );
 
   return (
     <div
@@ -79,23 +67,31 @@ export default function FadeControl({ value, onChange }: { value: number; onChan
       onPointerCancel={() => (dragRef.current = false)}
       className="relative h-20 w-full cursor-ew-resize touch-none overflow-hidden rounded-md bg-elevated outline-none select-none focus-visible:ring-2 focus-visible:ring-accent"
     >
-      {/* the clip's audio */}
+      {/* the two clips, meeting in the middle */}
       <div className="absolute inset-0 flex items-center gap-px px-1">
         {BARS.map((h, i) => (
           <div key={i} className="flex-1 rounded-full bg-ink/15" style={{ height: `${h * 70}%` }} />
         ))}
       </div>
+      <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-line" />
 
-      {fadePx > 0 && (
-        <>
-          {block("left")}
-          {block("right")}
-        </>
+      {/* the transition: one block each side of the cut, with the fade curves */}
+      {width > 0 && fadePx > 0 && (
+        <div
+          className="absolute inset-y-1 overflow-hidden rounded-sm border border-accent bg-app/55 transition-[width,left] duration-100 ease-out"
+          style={{ left: mid - fadePx, width: fadePx * 2 }}
+        >
+          <svg className="h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+            {/* out of the ending track, into the starting one: the two halves cross */}
+            <path d="M0 0 Q 25 55 50 100" className="fill-none stroke-accent" strokeWidth={1.25} vectorEffect="non-scaling-stroke" />
+            <path d="M50 100 Q 75 55 100 0" className="fill-none stroke-accent" strokeWidth={1.25} vectorEffect="non-scaling-stroke" />
+          </svg>
+          <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-accent/40" />
+        </div>
       )}
 
-      {/* grab hints, so it is clear the ends are draggable even at zero */}
-      <span className="absolute inset-y-3 left-1 w-1 rounded-full bg-accent/60" />
-      <span className="absolute inset-y-3 right-1 w-1 rounded-full bg-accent/60" />
+      {/* the grip at the cut, so it is obvious where the drag starts */}
+      <span className="pointer-events-none absolute top-1/2 left-1/2 h-8 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent" />
     </div>
   );
 }

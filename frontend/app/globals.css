@@ -116,6 +116,33 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Motion on every control, in one place: a press gives a little, and colour changes
+   cross-fade. Individual components no longer each remember to add this. */
+@media (prefers-reduced-motion: no-preference) {
+  button,
+  [role="button"],
+  [role="switch"],
+  [role="slider"],
+  a {
+    transition:
+      transform 0.12s ease,
+      background-color 0.18s ease,
+      color 0.18s ease,
+      border-color 0.18s ease,
+      opacity 0.18s ease;
+  }
+  button:not(:disabled):active,
+  [role="button"]:active,
+  [role="switch"]:active {
+    transform: scale(0.97);
+  }
+  /* rows and covers are pressed too, but they are big, so they move less */
+  li [role="button"]:active,
+  li button:not(:disabled):active {
+    transform: scale(0.99);
+  }
+}
+
 /* ThemeContext briefly adds this class on toggle so the whole UI cross-fades
    between light and dark instead of snapping. */
 .theme-transition,
