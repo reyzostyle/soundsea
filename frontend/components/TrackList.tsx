@@ -10,6 +10,7 @@ import {
   ChevronUpIcon,
   DownloadIcon,
   ExternalLinkIcon,
+  GlobeIcon,
   GripIcon,
   InfoIcon,
   MinusIcon,
@@ -36,6 +37,8 @@ type Props = {
   onAddToPlaylist: (playlistId: string, trackId: string) => void;
   onEdit: (trackId: string) => void;
   onStudio?: (trackId: string) => void;
+  /** signed in, library view: publish to / pull from the public library */
+  onSetPublic?: (trackId: string, isPublic: boolean) => void;
   onRemove: (trackId: string) => void;
   /** present in playlist view: enables drag-to-reorder via the grip handles */
   onReorder?: (ids: string[]) => void;
@@ -52,6 +55,7 @@ function TrackActionSheet({
   onClose,
   onEdit,
   onStudio,
+  onSetPublic,
   onAddToPlaylist,
   onRemove,
 }: {
@@ -61,6 +65,7 @@ function TrackActionSheet({
   onClose: () => void;
   onEdit: () => void;
   onStudio?: () => void;
+  onSetPublic?: (isPublic: boolean) => void;
   onAddToPlaylist: (playlistId: string) => void;
   onRemove: () => void;
 }) {
@@ -140,6 +145,11 @@ function TrackActionSheet({
                 <SlidersIcon className="h-5 w-5 text-muted" /> Open in Studio
               </button>
             )}
+            {onSetPublic && !track.savedFrom && (
+              <button onClick={() => { onSetPublic(!track.isPublic); onClose(); }} className={row}>
+                <GlobeIcon className="h-5 w-5 text-muted" /> {track.isPublic ? "Remove from Discover" : "Publish to Discover"}
+              </button>
+            )}
             <button onClick={() => setMode("details")} className={row}>
               <InfoIcon className="h-5 w-5 text-muted" /> Details
             </button>
@@ -170,6 +180,7 @@ export default function TrackList({
   onAddToPlaylist,
   onEdit,
   onStudio,
+  onSetPublic,
   onRemove,
   onReorder,
 }: Props) {
@@ -283,7 +294,14 @@ export default function TrackList({
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className={`truncate text-sm font-medium ${isCurrent ? "text-accent" : "text-ink"}`}>{t.title}</p>
-                  <p className="text-xs text-muted tabular-nums">{formatTime(t.duration)}</p>
+                  <p className="flex items-center gap-1.5 text-xs text-muted tabular-nums">
+                    {formatTime(t.duration)}
+                    {t.isPublic && (
+                      <span className="flex items-center gap-1" title="Published to Discover">
+                        · <GlobeIcon className="h-3 w-3" /> Public
+                      </span>
+                    )}
+                  </p>
                 </div>
                 <button
                   onClick={(e) => {
@@ -310,6 +328,7 @@ export default function TrackList({
           onClose={() => setMenuId(null)}
           onEdit={() => onEdit(menuTrack.id)}
           onStudio={onStudio ? () => onStudio(menuTrack.id) : undefined}
+          onSetPublic={onSetPublic ? (v) => onSetPublic(menuTrack.id, v) : undefined}
           onAddToPlaylist={(plId) => onAddToPlaylist(plId, menuTrack.id)}
           onRemove={() => onRemove(menuTrack.id)}
         />

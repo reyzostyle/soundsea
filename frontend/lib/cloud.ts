@@ -28,6 +28,8 @@ export async function fetchLibrary(userId: string): Promise<{ tracks: Track[]; p
     thumbnail: r.thumbnail,
     addedAt: new Date(r.created_at).getTime(),
     sourceUrl: r.source_url ?? null,
+    isPublic: !!r.is_public,
+    savedFrom: r.saved_from ?? null,
   }));
 
   const byPlaylist = new Map<string, { track_id: string; position: number }[]>();
@@ -57,7 +59,45 @@ export async function cloudUpsertTrack(userId: string, t: Track) {
     thumbnail: t.thumbnail,
     source_url: t.sourceUrl ?? null,
     created_at: new Date(t.addedAt).toISOString(),
+    // only sent when set, so syncing keeps working on a database without the
+    // public-library migration
+    ...(t.savedFrom ? { saved_from: t.savedFrom } : {}),
   });
+}
+
+export async function cloudSetPublic(trackId: string, isPublic: boolean) {
+  if (!supabase) return;
+  const { error } = await supabase
+    .from("tracks")
+    .update({ is_public: isPublic, published_at: isPublic ? new Date().toISOString() : null })
+    .eq("id", trackId);
+  if (error) throw new Error(error.message);
+}
+
+export type PublicTrack = {
+  id: string;
+  title: string;
+  filename: string;
+  duration: number | null;
+  thumbnail: string | null;
+  source_url: string | null;
+  published_at: string;
+  user_id: string;
+  username: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+  adds: number;
+};
+
+export async function fetchPublicLibrary(query: string, sort: "popular" | "new"): Promise<PublicTrack[]> {
+  if (!supabase) throw new Error("Accounts aren't set up.");
+  let q = supabase.from("public_library").select("*");
+  const term = query.trim();
+  if (term) q = q.ilike("title", `%${term.replace(/[%_]/g, "")}%`);
+  q = sort === "popular" ? q.order("adds", { ascending: false }).order("published_at", { ascending: false }) : q.order("published_at", { ascending: false });
+  const { data, error } = await q.limit(100);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as PublicTrack[];
 }
 
 export async function cloudDeleteTrack(trackId: string) {
@@ -122,6 +162,7 @@ export async function migrateLocalToCloud(userId: string, tracks: Track[], playl
         source_url: t.sourceUrl ?? null,
         // the track's real added time, not one shared now() for the whole batch
         created_at: new Date(t.addedAt).toISOString(),
+        ...(t.savedFrom ? { saved_from: t.savedFrom } : {}),
       }))
     );
   }

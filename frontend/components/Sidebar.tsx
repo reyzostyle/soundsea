@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Playlist } from "@/lib/types";
-import { CheckIcon, GripIcon, MusicIcon, PencilIcon, PlusIcon, SettingsIcon, SlidersIcon, TrashIcon, XIcon } from "./Icons";
+import { CheckIcon, GripIcon, MusicIcon, PencilIcon, PlusIcon, GlobeIcon, SettingsIcon, SlidersIcon, TrashIcon, XIcon } from "./Icons";
 
 type Props = {
   playlists: Playlist[];
@@ -118,6 +118,11 @@ export default function Sidebar({
           <MusicIcon className="h-4 w-4 shrink-0" />
           <span className="flex-1 truncate">Library</span>
           <span className="text-xs text-muted">{trackCount}</span>
+        </button>
+
+        <button className={itemClass(view === "discover")} onClick={() => onSelectView("discover")}>
+          <GlobeIcon className="h-4 w-4 shrink-0" />
+          <span className="flex-1 truncate">Discover</span>
         </button>
 
         <button className={itemClass(view === "studio")} onClick={() => onSelectView("studio")}>

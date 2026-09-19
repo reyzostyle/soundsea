@@ -16,6 +16,8 @@ import {
   cloudRemoveFromPlaylist,
   cloudRenamePlaylist,
   cloudReorderPlaylist,
+  cloudSetPublic,
+  PublicTrack,
   cloudUpdatePlaylistThumbnail,
   cloudUpsertTrack,
   fetchLibrary,
@@ -30,6 +32,7 @@ import TrackEditModal from "@/components/TrackEditModal";
 import PlaylistHeader from "@/components/PlaylistHeader";
 import SeaWave from "@/components/SeaWave";
 import Studio from "@/components/Studio";
+import Discover from "@/components/Discover";
 import { MenuIcon } from "@/components/Icons";
 
 export default function Home() {
@@ -50,6 +53,7 @@ export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [editingTrackId, setEditingTrackId] = useState<string | null>(null);
   const [studioTrackId, setStudioTrackId] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [shuffle, setShuffle] = useState(false);
   const [volume, setVolume] = useState(1);
   const [playbackOpts, setPlaybackOpts] = useState<PlaybackOptions>({ fade: 0, gap: 0 });
@@ -563,6 +567,42 @@ export default function Home() {
     if (user) cloudUpsertTrack(user.id, track).catch(() => {});
   };
 
+  // short confirmation line above the player, gone after a few seconds
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(null), 3500);
+    return () => clearTimeout(t);
+  }, [notice]);
+
+  const setTrackPublic = async (trackId: string, isPublic: boolean) => {
+    if (!user) return;
+    setTracks((prev) => prev.map((t) => (t.id === trackId ? { ...t, isPublic } : t)));
+    try {
+      await cloudSetPublic(trackId, isPublic);
+      setNotice(isPublic ? "Published to Discover" : "Removed from Discover");
+    } catch {
+      setTracks((prev) => prev.map((t) => (t.id === trackId ? { ...t, isPublic: !isPublic } : t)));
+      setNotice("Couldn't change that right now");
+    }
+  };
+
+  // adding from Discover makes your own copy that points at the same audio file
+  const addFromDiscover = (p: PublicTrack) => {
+    const track: Track = {
+      id: crypto.randomUUID(),
+      title: p.title,
+      filename: p.filename,
+      duration: p.duration,
+      thumbnail: p.thumbnail,
+      addedAt: Date.now(),
+      sourceUrl: p.source_url,
+      savedFrom: p.id,
+    };
+    setTracks((prev) => [track, ...prev]);
+    if (user) cloudUpsertTrack(user.id, track).catch(() => {});
+    setNotice("Added to your library");
+  };
+
   const selectView = (v: string) => {
     setView(v);
     setSidebarOpen(false);
@@ -595,7 +635,17 @@ export default function Home() {
         />
 
         <main className="flex min-w-0 flex-1 flex-col">
-          {view === "studio" ? (
+          {view === "discover" ? (
+            <div key="discover" className="anim-view flex-1 overflow-y-auto overscroll-contain px-4 py-6 md:px-8 md:py-10">
+              <Discover
+                myTracks={tracks}
+                myUserId={user?.id ?? null}
+                onAdd={addFromDiscover}
+                onPreviewStart={() => audioRef.current?.pause()}
+                mainPlaying={isPlaying}
+              />
+            </div>
+          ) : view === "studio" ? (
             <div key="studio" className="anim-view flex-1 overflow-y-auto overscroll-contain px-4 py-6 md:px-8 md:py-10">
               <Studio
                 tracks={tracks}
@@ -664,6 +714,7 @@ export default function Home() {
                   onAddToPlaylist={addToPlaylist}
                   onEdit={setEditingTrackId}
                   onStudio={openInStudio}
+                  onSetPublic={user ? setTrackPublic : undefined}
                   onRemove={(trackId) => deleteTrack(trackId)}
                 />
               </div>
@@ -672,6 +723,12 @@ export default function Home() {
         </main>
       </div>
       </div>
+
+      {notice && (
+        <div className="pointer-events-none relative z-20 flex justify-center">
+          <div className="anim-pop absolute bottom-3 rounded-full bg-ink px-4 py-2 text-sm font-medium text-app shadow-lg">{notice}</div>
+        </div>
+      )}
 
       <PlayerBar
         track={currentTrack}
