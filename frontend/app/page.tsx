@@ -29,6 +29,7 @@ import SettingsPanel from "@/components/SettingsPanel";
 import TrackEditModal from "@/components/TrackEditModal";
 import PlaylistHeader from "@/components/PlaylistHeader";
 import SeaWave from "@/components/SeaWave";
+import Studio from "@/components/Studio";
 import { MenuIcon } from "@/components/Icons";
 
 export default function Home() {
@@ -48,6 +49,7 @@ export default function Home() {
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [editingTrackId, setEditingTrackId] = useState<string | null>(null);
+  const [studioTrackId, setStudioTrackId] = useState<string | null>(null);
   const [shuffle, setShuffle] = useState(false);
   const [volume, setVolume] = useState(1);
 
@@ -186,7 +188,7 @@ export default function Home() {
 
   const queue = useMemo(() => tracksFor(queueSource), [tracksFor, queueSource]);
   const viewTracks = useMemo(() => tracksFor(view), [tracksFor, view]);
-  const viewPlaylist = view === "library" ? null : (playlists.find((p) => p.id === view) ?? null);
+  const viewPlaylist = playlists.find((p) => p.id === view) ?? null;
 
   // --- playback ---
 
@@ -532,6 +534,17 @@ export default function Home() {
     if (user) cloudDeleteTrack(trackId).catch(() => {});
   };
 
+  const openInStudio = (trackId: string) => {
+    setStudioTrackId(trackId);
+    setView("studio");
+  };
+
+  // a studio edit is a new track at the top of the library, like a fresh download
+  const addStudioEdit = (track: Track) => {
+    setTracks((prev) => [track, ...prev]);
+    if (user) cloudUpsertTrack(user.id, track).catch(() => {});
+  };
+
   const selectView = (v: string) => {
     setView(v);
     setSidebarOpen(false);
@@ -564,7 +577,19 @@ export default function Home() {
         />
 
         <main className="flex min-w-0 flex-1 flex-col">
-          {view === "settings" ? (
+          {view === "studio" ? (
+            <div key="studio" className="anim-view flex-1 overflow-y-auto overscroll-contain px-4 py-6 md:px-8 md:py-10">
+              <Studio
+                tracks={tracks}
+                trackId={studioTrackId}
+                onSelect={setStudioTrackId}
+                onSaved={addStudioEdit}
+                onPreviewStart={() => audioRef.current?.pause()}
+                onPlayTrack={(id) => playTrack(id, "library")}
+                mainPlaying={isPlaying}
+              />
+            </div>
+          ) : view === "settings" ? (
             <div key="settings" className="anim-view flex-1 overflow-y-auto overscroll-contain px-4 py-6 md:px-8 md:py-10">
               <SettingsPanel />
             </div>
@@ -590,6 +615,7 @@ export default function Home() {
                 onTogglePlay={togglePlay}
                 onAddToPlaylist={addToPlaylist}
                 onEdit={setEditingTrackId}
+                onStudio={openInStudio}
                 onRemove={(trackId) => removeFromPlaylist(viewPlaylist.id, trackId)}
                 onReorder={(ids) => reorderPlaylistTracks(viewPlaylist.id, ids)}
               />
@@ -619,6 +645,7 @@ export default function Home() {
                   onTogglePlay={togglePlay}
                   onAddToPlaylist={addToPlaylist}
                   onEdit={setEditingTrackId}
+                  onStudio={openInStudio}
                   onRemove={(trackId) => deleteTrack(trackId)}
                 />
               </div>

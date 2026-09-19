@@ -31,5 +31,7 @@ Open http://localhost:3000.
 
 - `POST /api/download` — body `{ "url": "<youtube or tiktok url>" }`, returns `{ title, filename, duration, thumbnail }`
 - `GET /api/audio/:filename` — serves the downloaded mp3 (supports Range requests for seeking)
+- `POST /api/thumbnail` — body `{ url }`, re-fetches a track's cover as a data URL (repairs expired TikTok covers)
+- `POST /api/render` — body `{ filename, start, end, speed, bass, reverb, fadeIn, fadeOut }`, renders an edited copy with ffmpeg and returns `{ filename, duration }` (Studio)
 
 Downloaded files live in `backend/public/downloads/`.

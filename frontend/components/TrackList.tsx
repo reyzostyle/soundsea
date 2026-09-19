@@ -19,6 +19,7 @@ import {
   PencilIcon,
   PlayIcon,
   PlusIcon,
+  SlidersIcon,
   TrashIcon,
   XIcon,
 } from "./Icons";
@@ -34,6 +35,7 @@ type Props = {
   onTogglePlay: () => void;
   onAddToPlaylist: (playlistId: string, trackId: string) => void;
   onEdit: (trackId: string) => void;
+  onStudio?: (trackId: string) => void;
   onRemove: (trackId: string) => void;
   /** present in playlist view: enables drag-to-reorder via the grip handles */
   onReorder?: (ids: string[]) => void;
@@ -49,6 +51,7 @@ function TrackActionSheet({
   isPlaylistView,
   onClose,
   onEdit,
+  onStudio,
   onAddToPlaylist,
   onRemove,
 }: {
@@ -57,6 +60,7 @@ function TrackActionSheet({
   isPlaylistView: boolean;
   onClose: () => void;
   onEdit: () => void;
+  onStudio?: () => void;
   onAddToPlaylist: (playlistId: string) => void;
   onRemove: () => void;
 }) {
@@ -131,6 +135,11 @@ function TrackActionSheet({
             <button onClick={() => { onEdit(); onClose(); }} className={row}>
               <PencilIcon className="h-5 w-5 text-muted" /> Edit
             </button>
+            {onStudio && (
+              <button onClick={() => { onStudio(); onClose(); }} className={row}>
+                <SlidersIcon className="h-5 w-5 text-muted" /> Open in Studio
+              </button>
+            )}
             <button onClick={() => setMode("details")} className={row}>
               <InfoIcon className="h-5 w-5 text-muted" /> Details
             </button>
@@ -160,6 +169,7 @@ export default function TrackList({
   onTogglePlay,
   onAddToPlaylist,
   onEdit,
+  onStudio,
   onRemove,
   onReorder,
 }: Props) {
@@ -299,6 +309,7 @@ export default function TrackList({
           isPlaylistView={isPlaylistView}
           onClose={() => setMenuId(null)}
           onEdit={() => onEdit(menuTrack.id)}
+          onStudio={onStudio ? () => onStudio(menuTrack.id) : undefined}
           onAddToPlaylist={(plId) => onAddToPlaylist(plId, menuTrack.id)}
           onRemove={() => onRemove(menuTrack.id)}
         />

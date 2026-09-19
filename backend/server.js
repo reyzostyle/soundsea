@@ -249,6 +249,93 @@ app.post("/api/thumbnail", (req, res) => {
   });
 });
 
+// Studio: render an edited copy of a track. The original file is never touched; the
+// result is a new mp3 the client saves as a new track. Speed works like the "sped up"
+// and "slowed" edits people actually listen to: resampled, so pitch moves with tempo.
+const clamp = (v, min, max, fallback) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+};
+
+function probeDuration(filePath) {
+  return new Promise((resolve) => {
+    const p = spawn("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", filePath]);
+    let out = "";
+    p.stdout.on("data", (c) => (out += c));
+    p.on("error", () => resolve(null));
+    p.on("close", () => {
+      const d = parseFloat(out);
+      resolve(Number.isFinite(d) ? d : null);
+    });
+  });
+}
+
+app.post("/api/render", async (req, res) => {
+  const body = req.body || {};
+  const source = typeof body.filename === "string" ? body.filename : "";
+  if (!/^[a-f0-9]{16}\.mp3$/.test(source)) return res.status(400).json({ error: "Invalid filename." });
+  const sourcePath = path.join(DOWNLOADS_DIR, source);
+  if (!fs.existsSync(sourcePath)) return res.status(404).json({ error: "Original file not found." });
+
+  const total = await probeDuration(sourcePath);
+  if (!total) return res.status(500).json({ error: "Could not read the original file." });
+
+  const start = clamp(body.start, 0, total, 0);
+  const end = clamp(body.end, start + 0.5, total, total);
+  const speed = clamp(body.speed, 0.5, 1.5, 1);
+  const bass = clamp(body.bass, 0, 15, 0);
+  const reverb = clamp(body.reverb, 0, 1, 0);
+  const outLen = (end - start) / speed;
+  const fadeIn = clamp(body.fadeIn, 0, outLen / 2, 0);
+  const fadeOut = clamp(body.fadeOut, 0, outLen / 2, 0);
+
+  // everything becomes 44.1k stereo first so asetrate means the same thing for every file
+  let chain = `[0:a]aformat=sample_rates=44100:channel_layouts=stereo`;
+  if (speed !== 1) chain += `,asetrate=${Math.round(44100 * speed)},aresample=44100`;
+  if (bass > 0) chain += `,bass=g=${bass.toFixed(1)}:f=100:w=0.6`;
+  chain += "[s]";
+  let last = "s";
+  const inputs = ["-ss", start.toFixed(3), "-to", end.toFixed(3), "-i", sourcePath];
+  if (reverb > 0) {
+    // impulse response: 2.5s of exponentially decaying noise, the same shape the
+    // browser preview builds for its ConvolverNode
+    inputs.push("-f", "lavfi", "-i", "anoisesrc=d=2.5:c=white:a=0.5:r=44100,afade=t=out:d=2.5:curve=exp,aformat=channel_layouts=stereo");
+    chain += `;[s][1:a]afir=dry=${(1 - reverb * 0.35).toFixed(2)}:wet=${(reverb * 0.5).toFixed(2)}[r]`;
+    last = "r";
+  }
+  const tail = [];
+  // a hair of fade-in always, so a trim that starts mid-waveform doesn't click
+  tail.push(`afade=t=in:d=${Math.max(fadeIn, 0.02).toFixed(3)}`);
+  if (fadeOut > 0) tail.push(`afade=t=out:st=${(outLen - fadeOut).toFixed(3)}:d=${fadeOut.toFixed(3)}`);
+  tail.push("alimiter=limit=0.95");
+  chain += `;[${last}]${tail.join(",")}[o]`;
+
+  const id = crypto.randomBytes(8).toString("hex");
+  const filename = `${id}.mp3`;
+  const outPath = path.join(DOWNLOADS_DIR, filename);
+  const ff = spawn("ffmpeg", [
+    "-v", "error", "-y", ...inputs,
+    "-filter_complex", chain, "-map", "[o]",
+    "-c:a", "libmp3lame", "-q:a", "2", outPath,
+  ]);
+  let stderr = "";
+  ff.stderr.on("data", (c) => (stderr += c));
+  const timer = setTimeout(() => ff.kill("SIGKILL"), 2 * 60 * 1000);
+  ff.on("error", () => {
+    clearTimeout(timer);
+    if (!res.headersSent) res.status(500).json({ error: "ffmpeg unavailable." });
+  });
+  ff.on("close", async (code) => {
+    clearTimeout(timer);
+    if (res.headersSent) return;
+    if (code !== 0 || !fs.existsSync(outPath)) {
+      console.error(`render failed (code ${code}) for ${source}\n${stderr}`);
+      return res.status(500).json({ error: "Rendering failed." });
+    }
+    res.json({ filename, duration: (await probeDuration(outPath)) ?? outLen });
+  });
+});
+
 // Lightweight health check: is the PO token provider reachable?
 app.get("/api/health", async (req, res) => {
   let potProvider;
@@ -258,7 +345,17 @@ app.get("/api/health", async (req, res) => {
   } catch (e) {
     potProvider = `unreachable: ${e.message}`;
   }
-  res.json({ ok: true, cookiesFile: fs.existsSync(COOKIES_FILE), potProvider });
+  // how many audio files the disk holds and how old the oldest is: tells at a glance
+  // whether downloads survive a redeploy (a volume) or vanish with each container
+  let files = 0;
+  let oldestDays = null;
+  try {
+    const names = fs.readdirSync(DOWNLOADS_DIR).filter((n) => n.endsWith(".mp3"));
+    files = names.length;
+    const oldest = Math.min(...names.map((n) => fs.statSync(path.join(DOWNLOADS_DIR, n)).mtimeMs));
+    if (Number.isFinite(oldest)) oldestDays = Math.round((Date.now() - oldest) / 86400000);
+  } catch {}
+  res.json({ ok: true, cookiesFile: fs.existsSync(COOKIES_FILE), potProvider, files, oldestDays });
 });
 
 app.get("/api/audio/:filename", (req, res) => {
