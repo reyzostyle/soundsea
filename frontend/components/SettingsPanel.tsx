@@ -3,6 +3,8 @@
 import { useTheme } from "@/contexts/ThemeContext";
 import { MoonIcon, SunIcon } from "./Icons";
 import AuthButton from "./AuthButton";
+import ProfileEditor from "./ProfileEditor";
+import { useAuth } from "@/contexts/AuthContext";
 import Slider from "./Slider";
 import { PlaybackOptions } from "@/lib/api";
 
@@ -13,12 +15,17 @@ type Props = {
 
 export default function SettingsPanel({ playbackOpts, onPlaybackOpts }: Props) {
   const { theme, setTheme } = useTheme();
+  const { user } = useAuth();
 
   return (
     <div className="max-w-xl">
       <h1 className="mb-5 text-2xl font-bold tracking-tight">Settings</h1>
 
       <div className="flex flex-col gap-3">
+        <section className="rounded-lg border border-line bg-panel px-4 py-4">
+          {user ? <ProfileEditor /> : <AuthButton />}
+        </section>
+
         <section className="flex items-center justify-between rounded-lg border border-line bg-panel px-4 py-3">
           <span className="text-sm font-medium text-ink">Theme</span>
           <div className="flex gap-1 rounded-md bg-app p-1">
@@ -62,9 +69,6 @@ export default function SettingsPanel({ playbackOpts, onPlaybackOpts }: Props) {
           />
         </section>
 
-        <section className="rounded-lg border border-line bg-panel px-4 py-3.5">
-          <AuthButton />
-        </section>
 
         <a
           href="https://discord.gg/VPQ3xncf5Q"
