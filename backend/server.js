@@ -358,7 +358,73 @@ app.get("/api/health", async (req, res) => {
   res.json({ ok: true, cookiesFile: fs.existsSync(COOKIES_FILE), potProvider, files, oldestDays });
 });
 
-app.get("/api/audio/:filename", (req, res) => {
+// Playback variants: the same track with a fade-out at the end and/or silence after
+// it, for the "fade" and "gap between tracks" settings. Baked into a file rather than
+// done in the browser because iOS Safari ignores audio.volume and throttles timers
+// on a locked screen, so a client-side fade or pause would silently not happen there.
+// Cached on disk; variants nobody played for 30 days are swept.
+const VARIANTS_DIR = path.join(DOWNLOADS_DIR, "variants");
+fs.mkdirSync(VARIANTS_DIR, { recursive: true });
+const rendering = new Map();
+
+function sweepVariants() {
+  const cutoff = Date.now() - 30 * 86400000;
+  try {
+    for (const name of fs.readdirSync(VARIANTS_DIR)) {
+      const p = path.join(VARIANTS_DIR, name);
+      if (fs.statSync(p).atimeMs < cutoff && fs.statSync(p).mtimeMs < cutoff) fs.unlinkSync(p);
+    }
+  } catch {}
+}
+sweepVariants();
+setInterval(sweepVariants, 86400000).unref();
+
+// half-second steps, 0–10s: keeps the number of cached variants small
+const step = (v) => Math.round(clamp(v, 0, 10, 0) * 2) / 2;
+
+async function variantPath(filename, fade, gap) {
+  const id = filename.slice(0, 16);
+  const out = path.join(VARIANTS_DIR, `${id}.f${fade}.g${gap}.mp3`);
+  if (fs.existsSync(out)) {
+    fs.utimes(out, new Date(), new Date(), () => {});
+    return out;
+  }
+  if (rendering.has(out)) return rendering.get(out);
+
+  const job = (async () => {
+    const src = path.join(DOWNLOADS_DIR, filename);
+    const total = await probeDuration(src);
+    if (!total) return null;
+    const filters = [];
+    const f = Math.min(fade, total / 2);
+    if (f > 0) filters.push(`afade=t=out:st=${(total - f).toFixed(3)}:d=${f.toFixed(3)}`);
+    if (gap > 0) filters.push(`apad=pad_dur=${gap}`);
+    const tmp = `${out}.${crypto.randomBytes(4).toString("hex")}.tmp.mp3`;
+    const ok = await new Promise((resolve) => {
+      const ff = spawn("ffmpeg", ["-v", "error", "-y", "-i", src, "-af", filters.join(","), "-c:a", "libmp3lame", "-q:a", "2", tmp]);
+      const kill = setTimeout(() => ff.kill("SIGKILL"), 2 * 60 * 1000);
+      ff.on("error", () => resolve(false));
+      ff.on("close", (code) => {
+        clearTimeout(kill);
+        resolve(code === 0);
+      });
+    });
+    if (!ok || !fs.existsSync(tmp)) {
+      fs.rm(tmp, () => {});
+      return null;
+    }
+    fs.renameSync(tmp, out); // atomic: a half-written variant is never served
+    return out;
+  })();
+  rendering.set(out, job);
+  try {
+    return await job;
+  } finally {
+    rendering.delete(out);
+  }
+}
+
+app.get("/api/audio/:filename", async (req, res) => {
   const { filename } = req.params;
   // filenames are always <16 hex chars>.mp3, generated server-side
   if (!/^[a-f0-9]{16}\.mp3$/.test(filename)) {
@@ -377,9 +443,18 @@ app.get("/api/audio/:filename", (req, res) => {
       "Content-Disposition",
       `attachment; filename="${ascii}.mp3"; filename*=UTF-8''${encodeURIComponent(raw)}.mp3`
     );
+    return res.sendFile(filePath);
+  }
+
+  const fade = step(req.query.fade);
+  const gap = step(req.query.gap);
+  let servePath = filePath;
+  if (fade > 0 || gap > 0) {
+    // if the variant can't be made, the plain file still plays
+    servePath = (await variantPath(filename, fade, gap)) || filePath;
   }
   // sendFile supports Range requests, which makes the player seekable
-  res.sendFile(filePath);
+  res.sendFile(servePath);
 });
 
 app.listen(PORT, () => {

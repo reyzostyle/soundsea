@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Playlist, RepeatMode, Track } from "@/lib/types";
 import { loadPlaylists, loadTracks, savePlaylists, saveTracks } from "@/lib/storage";
-import { API_BASE, audioUrl } from "@/lib/api";
+import { API_BASE, PlaybackOptions, audioUrl } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import { squareCoverUrl } from "@/lib/image";
 import { setThumbRepairHandler } from "@/lib/thumbRepair";
@@ -52,6 +52,9 @@ export default function Home() {
   const [studioTrackId, setStudioTrackId] = useState<string | null>(null);
   const [shuffle, setShuffle] = useState(false);
   const [volume, setVolume] = useState(1);
+  const [playbackOpts, setPlaybackOpts] = useState<PlaybackOptions>({ fade: 0, gap: 0 });
+  const playbackOptsRef = useRef(playbackOpts);
+  playbackOptsRef.current = playbackOpts;
 
   const audioRef = useRef<HTMLAudioElement>(null);
   // When restoring a previous session, holds the position to seek to (stay paused).
@@ -65,6 +68,8 @@ export default function Home() {
     try {
       const v = parseFloat(localStorage.getItem("mp.volume") ?? "");
       if (!Number.isNaN(v)) setVolume(Math.min(1, Math.max(0, v)));
+      const o = JSON.parse(localStorage.getItem("mp.playbackOpts") ?? "null") as Partial<PlaybackOptions> | null;
+      if (o) setPlaybackOpts({ fade: Number(o.fade) || 0, gap: Number(o.gap) || 0 });
     } catch {}
     setHydrated(true);
   }, []);
@@ -76,6 +81,12 @@ export default function Home() {
       localStorage.setItem("mp.volume", String(volume));
     } catch {}
   }, [volume]);
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      localStorage.setItem("mp.playbackOpts", JSON.stringify(playbackOpts));
+    } catch {}
+  }, [playbackOpts, hydrated]);
   useEffect(() => {
     if (hydrated) saveTracks(tracks);
   }, [tracks, hydrated]);
@@ -175,6 +186,13 @@ export default function Home() {
 
   const trackById = useMemo(() => new Map(tracks.map((t) => [t.id, t])), [tracks]);
   const currentTrack = currentId ? (trackById.get(currentId) ?? null) : null;
+  // The fade/gap in effect when a track starts stays with it: changing the setting
+  // mid-song must not swap the file (and restart the song). The next track picks it up.
+  const currentFile = currentTrack?.filename;
+  const currentSrc = useMemo(
+    () => (currentFile ? audioUrl(currentFile, playbackOptsRef.current) : undefined),
+    [currentFile]
+  );
 
   const tracksFor = useCallback(
     (source: string): Track[] => {
@@ -591,7 +609,7 @@ export default function Home() {
             </div>
           ) : view === "settings" ? (
             <div key="settings" className="anim-view flex-1 overflow-y-auto overscroll-contain px-4 py-6 md:px-8 md:py-10">
-              <SettingsPanel />
+              <SettingsPanel playbackOpts={playbackOpts} onPlaybackOpts={setPlaybackOpts} />
             </div>
           ) : viewPlaylist ? (
             // Spotify-style playlist view: the banner header scrolls with the list
@@ -674,7 +692,7 @@ export default function Home() {
 
       <audio
         ref={audioRef}
-        src={currentTrack ? audioUrl(currentTrack.filename) : undefined}
+        src={currentSrc}
         preload="metadata"
         onPlay={() => setIsPlaying(true)}
         onPause={(e) => {

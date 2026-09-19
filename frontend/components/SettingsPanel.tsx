@@ -3,8 +3,15 @@
 import { useTheme } from "@/contexts/ThemeContext";
 import { MoonIcon, SunIcon } from "./Icons";
 import AuthButton from "./AuthButton";
+import Slider from "./Slider";
+import { PlaybackOptions } from "@/lib/api";
 
-export default function SettingsPanel() {
+type Props = {
+  playbackOpts: PlaybackOptions;
+  onPlaybackOpts: (opts: PlaybackOptions) => void;
+};
+
+export default function SettingsPanel({ playbackOpts, onPlaybackOpts }: Props) {
   const { theme, setTheme } = useTheme();
 
   return (
@@ -28,6 +35,31 @@ export default function SettingsPanel() {
               </button>
             ))}
           </div>
+        </section>
+
+        <section className="flex flex-col gap-5 rounded-lg border border-line bg-panel px-4 py-4">
+          <div>
+            <p className="text-sm font-medium text-ink">Between tracks</p>
+            <p className="mt-0.5 text-xs text-muted">Applies from the next track that starts.</p>
+          </div>
+          <Slider
+            label="Fade out"
+            value={playbackOpts.fade}
+            min={0}
+            max={10}
+            step={0.5}
+            display={playbackOpts.fade ? `${playbackOpts.fade} s` : "Off"}
+            onChange={(v) => onPlaybackOpts({ ...playbackOpts, fade: v })}
+          />
+          <Slider
+            label="Gap"
+            value={playbackOpts.gap}
+            min={0}
+            max={10}
+            step={0.5}
+            display={playbackOpts.gap ? `${playbackOpts.gap} s of silence` : "Off"}
+            onChange={(v) => onPlaybackOpts({ ...playbackOpts, gap: v })}
+          />
         </section>
 
         <section className="rounded-lg border border-line bg-panel px-4 py-3.5">
