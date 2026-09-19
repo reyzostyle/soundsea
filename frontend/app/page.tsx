@@ -203,13 +203,14 @@ export default function Home() {
     return new Set(tracks.filter((t) => !offline.saved.has(audioUrl(t.filename))).map((t) => t.id));
   }, [offline.online, offline.saved, tracks]);
 
+  const scrollKey = view === "studio" && studioTrackId ? "studio:edit" : view;
   useEffect(() => {
     const el = scrollRef.current;
-    if (el) el.scrollTop = scrollPos.current[view] ?? 0;
-  }, [view]);
+    if (el) el.scrollTop = scrollPos.current[scrollKey] ?? 0;
+  }, [scrollKey]);
 
   const rememberScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    scrollPos.current[view] = e.currentTarget.scrollTop;
+    scrollPos.current[scrollKey] = e.currentTarget.scrollTop;
   };
 
   const trackById = useMemo(() => new Map(tracks.map((t) => [t.id, t])), [tracks]);
@@ -694,7 +695,12 @@ export default function Home() {
 
         <main className="flex min-w-0 flex-1 flex-col">
           {view === "discover" ? (
-            <div key="discover" className="anim-view flex-1 overflow-y-auto overscroll-contain px-4 py-6 md:px-8 md:py-10">
+            <div
+              key="discover"
+              ref={scrollRef}
+              onScroll={rememberScroll}
+              className="anim-view flex-1 overflow-y-auto overscroll-contain px-4 py-6 md:px-8 md:py-10"
+            >
               <Discover
                 myTracks={tracks}
                 myUserId={user?.id ?? null}
@@ -704,7 +710,12 @@ export default function Home() {
               />
             </div>
           ) : view === "studio" ? (
-            <div key="studio" className="anim-view flex-1 overflow-y-auto overscroll-contain px-4 py-6 md:px-8 md:py-10">
+            <div
+              key="studio"
+              ref={scrollRef}
+              onScroll={rememberScroll}
+              className="anim-view flex-1 overflow-y-auto overscroll-contain px-4 py-6 md:px-8 md:py-10"
+            >
               <Studio
                 tracks={tracks}
                 trackId={studioTrackId}
@@ -718,7 +729,12 @@ export default function Home() {
               />
             </div>
           ) : view === "settings" ? (
-            <div key="settings" className="anim-view flex-1 overflow-y-auto overscroll-contain px-4 py-6 md:px-8 md:py-10">
+            <div
+              key="settings"
+              ref={scrollRef}
+              onScroll={rememberScroll}
+              className="anim-view flex-1 overflow-y-auto overscroll-contain px-4 py-6 md:px-8 md:py-10"
+            >
               <SettingsPanel playbackOpts={playbackOpts} onPlaybackOpts={setPlaybackOpts} offline={offline} />
             </div>
           ) : viewPlaylist ? (
@@ -739,7 +755,7 @@ export default function Home() {
               />
               <TrackList
                 tracks={viewTracks}
-                emptyHint="This playlist is empty. Add tracks from your library with the three-dots menu on any track."
+                emptyHint="This playlist is empty. Add tracks from the menu on any track."
                 currentId={currentId}
                 isPlaying={isPlaying}
                 unavailableIds={unavailableIds}
@@ -777,7 +793,7 @@ export default function Home() {
               <div ref={scrollRef} onScroll={rememberScroll} className="flex-1 overflow-y-auto overscroll-contain px-4 pb-6 md:px-8">
                 <TrackList
                   tracks={viewTracks}
-                  emptyHint="Paste a YouTube or TikTok link above to download your first track."
+                  emptyHint="Paste a YouTube or TikTok link above to add your first track."
                   currentId={currentId}
                   isPlaying={isPlaying}
                   unavailableIds={unavailableIds}

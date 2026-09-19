@@ -128,8 +128,8 @@ export default function Discover({ myTracks, myUserId, onAdd, onPreviewStart, ma
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
           <MusicIcon className="h-8 w-8 text-muted/60" />
-          <p className="max-w-sm text-sm text-muted">
-            {query ? `Nothing shared matches “${query}”.` : "Nothing shared yet. Publish a track from its menu to be the first."}
+          <p className="max-w-xs text-sm leading-relaxed text-balance text-muted">
+            {query ? `Nothing shared matches “${query}”.` : "Nothing here yet. Publish a track from its menu."}
           </p>
         </div>
       ) : (

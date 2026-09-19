@@ -2,12 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 
-// The fade on a track, drawn on the track itself: drag either end inwards to make it
-// longer, the way a clip's audio fades work in an editor. The same gesture as the
-// Studio waveform, so the two screens behave alike.
+// The fade, drawn the way a timeline draws a transition: an audio clip with a block
+// at each end holding the crossing lines, and you drag the block's inner edge to make
+// it longer or shorter. Both ends are the same length, because it is one setting.
 
 const MAX = 10; // seconds
-const SPAN = 20; // seconds across the control
+const SPAN = 20; // seconds across the clip
+
+// a fixed, tame waveform so the lane reads as audio without pretending to be a file
+const BARS = Array.from({ length: 96 }, (_, i) => {
+  const wave = Math.sin(i * 0.7) * 0.25 + Math.sin(i * 0.23) * 0.3 + Math.sin(i * 1.9) * 0.12;
+  return 0.42 + Math.abs(wave) * 0.55;
+});
 
 export default function FadeControl({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const boxRef = useRef<HTMLDivElement>(null);
@@ -33,18 +39,25 @@ export default function FadeControl({ value, onChange }: { value: number; onChan
     onChange(clamp((x < r.width / 2 ? x : r.width - x) / perSec));
   };
 
-  const onDown = (e: React.PointerEvent) => {
-    dragRef.current = true;
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-    set(e);
-  };
-
   const onKey = (e: React.KeyboardEvent) => {
     const step = e.key === "ArrowLeft" || e.key === "ArrowDown" ? -0.5 : e.key === "ArrowRight" || e.key === "ArrowUp" ? 0.5 : 0;
     if (!step) return;
     e.preventDefault();
     onChange(clamp(value + step));
   };
+
+  // one fade block: the crossing lines inside it, a grab edge on the inner side
+  const block = (side: "left" | "right") => (
+    <div
+      className={`absolute inset-y-0 overflow-hidden bg-app/55 ${side === "left" ? "left-0 border-r" : "right-0 border-l"} border-accent`}
+      style={{ width: fadePx }}
+    >
+      <svg className="h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <polyline points="0,100 100,0" className="fill-none stroke-accent" strokeWidth={1} vectorEffect="non-scaling-stroke" />
+        <polyline points="0,0 100,100" className="fill-none stroke-accent/45" strokeWidth={1} vectorEffect="non-scaling-stroke" />
+      </svg>
+    </div>
+  );
 
   return (
     <div
@@ -56,30 +69,33 @@ export default function FadeControl({ value, onChange }: { value: number; onChan
       aria-valuemax={MAX}
       aria-valuenow={value}
       onKeyDown={onKey}
-      onPointerDown={onDown}
+      onPointerDown={(e) => {
+        dragRef.current = true;
+        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+        set(e);
+      }}
       onPointerMove={(e) => dragRef.current && set(e)}
       onPointerUp={() => (dragRef.current = false)}
       onPointerCancel={() => (dragRef.current = false)}
-      className="relative h-16 w-full cursor-ew-resize touch-none rounded-md bg-elevated outline-none select-none focus-visible:ring-2 focus-visible:ring-accent"
+      className="relative h-20 w-full cursor-ew-resize touch-none overflow-hidden rounded-md bg-elevated outline-none select-none focus-visible:ring-2 focus-visible:ring-accent"
     >
-      {width > 0 && (
-        <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox={`0 0 ${width} 64`} preserveAspectRatio="none">
-          {fadePx > 0 && (
-            <>
-              <polygon points={`0,0 ${fadePx},0 0,64`} className="fill-app/70" />
-              <polygon points={`${width - fadePx},0 ${width},0 ${width},64`} className="fill-app/70" />
-            </>
-          )}
-          <polyline
-            points={`0,64 ${fadePx},0 ${width - fadePx},0 ${width},64`}
-            className="fill-none stroke-accent"
-            strokeWidth={1.5}
-            vectorEffect="non-scaling-stroke"
-          />
-        </svg>
+      {/* the clip's audio */}
+      <div className="absolute inset-0 flex items-center gap-px px-1">
+        {BARS.map((h, i) => (
+          <div key={i} className="flex-1 rounded-full bg-ink/15" style={{ height: `${h * 70}%` }} />
+        ))}
+      </div>
+
+      {fadePx > 0 && (
+        <>
+          {block("left")}
+          {block("right")}
+        </>
       )}
-      <span className="absolute -top-1.5 h-4 w-4 -translate-x-1/2 rounded-full border-2 border-accent bg-app" style={{ left: fadePx }} />
-      <span className="absolute -top-1.5 h-4 w-4 -translate-x-1/2 rounded-full border-2 border-accent bg-app" style={{ left: width - fadePx }} />
+
+      {/* grab hints, so it is clear the ends are draggable even at zero */}
+      <span className="absolute inset-y-3 left-1 w-1 rounded-full bg-accent/60" />
+      <span className="absolute inset-y-3 right-1 w-1 rounded-full bg-accent/60" />
     </div>
   );
 }

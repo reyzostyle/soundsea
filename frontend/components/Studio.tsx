@@ -152,7 +152,7 @@ function TrackPicker({
   return (
     <>
       <p className="mb-4 max-w-md text-sm leading-relaxed text-balance text-muted">
-        Pick a track to trim, speed up, slow down or add bass. Your original stays as it is.
+        Pick a track to trim, speed up, slow down or add bass. Tap the cover to hear it first. Your original stays as it is.
       </p>
       <div className="mb-3 flex h-11 items-center gap-2 rounded-full border border-line bg-panel px-4 focus-within:border-accent">
         <SearchIcon className="h-4 w-4 shrink-0 text-muted" />
@@ -165,34 +165,37 @@ function TrackPicker({
       </div>
       <ul className="-mx-3">
         {shown.map((t) => (
-          <li
-            key={t.id}
-            className="group flex items-center gap-3 rounded-md px-3 py-2 transition-colors hover:bg-elevated/60"
-          >
-            <button
-              onClick={() => togglePreview(t)}
-              className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md"
-              aria-label={previewId === t.id && previewPlaying ? "Pause preview" : "Play preview"}
-            >
-              <TrackCover track={t} className="h-full w-full" />
-              <span
-                className={`absolute inset-0 flex items-center justify-center bg-black/50 text-white transition-opacity ${
-                  previewId === t.id ? "" : "opacity-0 group-hover:opacity-100"
-                }`}
-              >
-                {previewId === t.id && previewPlaying ? <PauseIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}
-              </span>
-            </button>
-            <button onClick={() => onSelect(t.id)} className="min-w-0 flex-1 truncate py-1 text-left text-sm text-ink">
-              {t.title}
-            </button>
-            <span className="shrink-0 text-xs text-muted tabular-nums">{formatTime(t.duration)}</span>
-            <button
+          // the row is the button: anywhere on it opens the editor, and the cover
+          // (a real button on top of it) plays the track instead
+          <li key={t.id}>
+            <div
+              role="button"
+              tabIndex={0}
               onClick={() => onSelect(t.id)}
-              className="h-8 shrink-0 rounded-full border border-line px-3 text-xs font-medium text-ink transition-colors hover:bg-elevated"
+              onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onSelect(t.id))}
+              className="group flex cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 transition-colors hover:bg-elevated/60"
             >
-              Edit
-            </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  togglePreview(t);
+                }}
+                className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md"
+                aria-label={previewId === t.id && previewPlaying ? "Pause preview" : "Play preview"}
+              >
+                <TrackCover track={t} className="h-full w-full" />
+                <span
+                  className={`absolute inset-0 flex items-center justify-center bg-black/50 text-white transition-opacity ${
+                    previewId === t.id ? "" : "opacity-0 group-hover:opacity-100"
+                  }`}
+                >
+                  {previewId === t.id && previewPlaying ? <PauseIcon className="h-5 w-5" /> : <PlayIcon className="h-5 w-5" />}
+                </span>
+              </button>
+              <span className="min-w-0 flex-1 truncate text-sm text-ink">{t.title}</span>
+              <span className="shrink-0 text-xs text-muted tabular-nums">{formatTime(t.duration)}</span>
+              <ChevronUpIcon className="h-4 w-4 shrink-0 rotate-90 text-muted/60" />
+            </div>
           </li>
         ))}
         {!shown.length && <li className="px-3 py-6 text-sm text-muted">Nothing matches “{query}”.</li>}

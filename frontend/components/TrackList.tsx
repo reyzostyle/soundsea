@@ -239,7 +239,7 @@ export default function TrackList({
     return (
       <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
         <MusicIcon className="h-8 w-8 text-muted/60" />
-        <p className="max-w-sm text-sm text-muted">{emptyHint}</p>
+        <p className="max-w-xs text-sm leading-relaxed text-balance text-muted">{emptyHint}</p>
       </div>
     );
   }
