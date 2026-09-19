@@ -358,8 +358,8 @@ app.get("/api/health", async (req, res) => {
   res.json({ ok: true, cookiesFile: fs.existsSync(COOKIES_FILE), potProvider, files, oldestDays });
 });
 
-// Playback variants: the same track with a fade-out at the end and/or silence after
-// it, for the "fade" and "gap between tracks" settings. Baked into a file rather than
+// Playback variants: the same track faded in and out and/or followed by silence, for
+// the "fade" and "gap between tracks" settings. Baked into a file rather than
 // done in the browser because iOS Safari ignores audio.volume and throttles timers
 // on a locked screen, so a client-side fade or pause would silently not happen there.
 // Cached on disk; variants nobody played for 30 days are swept.
@@ -384,7 +384,9 @@ const step = (v) => Math.round(clamp(v, 0, 10, 0) * 2) / 2;
 
 async function variantPath(filename, fade, gap) {
   const id = filename.slice(0, 16);
-  const out = path.join(VARIANTS_DIR, `${id}.f${fade}.g${gap}.mp3`);
+  // v2: variants made before the fade-in was added must not be served as-is.
+  // The old files simply go unused and the 30-day sweep collects them.
+  const out = path.join(VARIANTS_DIR, `${id}.f${fade}.g${gap}.v2.mp3`);
   if (fs.existsSync(out)) {
     fs.utimes(out, new Date(), new Date(), () => {});
     return out;
@@ -396,8 +398,13 @@ async function variantPath(filename, fade, gap) {
     const total = await probeDuration(src);
     if (!total) return null;
     const filters = [];
+    // the same length at both ends: the track fades in as the one before it fades
+    // out, which is the crossfade shape the Settings screen draws
     const f = Math.min(fade, total / 2);
-    if (f > 0) filters.push(`afade=t=out:st=${(total - f).toFixed(3)}:d=${f.toFixed(3)}`);
+    if (f > 0) {
+      filters.push(`afade=t=in:d=${f.toFixed(3)}`);
+      filters.push(`afade=t=out:st=${(total - f).toFixed(3)}:d=${f.toFixed(3)}`);
+    }
     if (gap > 0) filters.push(`apad=pad_dur=${gap}`);
     const tmp = `${out}.${crypto.randomBytes(4).toString("hex")}.tmp.mp3`;
     const ok = await new Promise((resolve) => {

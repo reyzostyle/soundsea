@@ -5,7 +5,7 @@ import { MoonIcon, SunIcon } from "./Icons";
 import AuthButton from "./AuthButton";
 import ProfileEditor from "./ProfileEditor";
 import { useAuth } from "@/contexts/AuthContext";
-import Slider from "./Slider";
+import BetweenTracks from "./BetweenTracks";
 import { PlaybackOptions } from "@/lib/api";
 import { OfflineState } from "@/lib/offline";
 
@@ -49,25 +49,12 @@ export default function SettingsPanel({ playbackOpts, onPlaybackOpts, offline }:
         <section className="flex flex-col gap-5 rounded-lg border border-line bg-panel px-4 py-4">
           <div>
             <p className="text-sm font-medium text-ink">Between tracks</p>
-            <p className="mt-0.5 text-xs text-muted">Applies from the next track that starts.</p>
+            <p className="mt-0.5 text-xs text-muted">Drag the ramp to fade, drag the middle to leave silence. Applies from the next track that starts.</p>
           </div>
-          <Slider
-            label="Fade out"
-            value={playbackOpts.fade}
-            min={0}
-            max={10}
-            step={0.5}
-            display={playbackOpts.fade ? `${playbackOpts.fade} s` : "Off"}
-            onChange={(v) => onPlaybackOpts({ ...playbackOpts, fade: v })}
-          />
-          <Slider
-            label="Gap"
-            value={playbackOpts.gap}
-            min={0}
-            max={10}
-            step={0.5}
-            display={playbackOpts.gap ? `${playbackOpts.gap} s of silence` : "Off"}
-            onChange={(v) => onPlaybackOpts({ ...playbackOpts, gap: v })}
+          <BetweenTracks
+            fade={playbackOpts.fade}
+            gap={playbackOpts.gap}
+            onChange={(next) => onPlaybackOpts(next)}
           />
         </section>
 
