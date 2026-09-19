@@ -6,24 +6,25 @@
 */
 :root,
 [data-theme="light"] {
-  --c-app: #f6f7f9;
+  /* neutral white and grey, no blue cast: the same palette Hersh uses */
+  --c-app: #fafafa;
   --c-panel: #ffffff;
-  --c-elevated: #eceef2;
-  --c-line: #e1e5ea;
-  --c-ink: #161a20;
-  --c-muted: #6a7280;
+  --c-elevated: #efefef;
+  --c-line: #e4e4e4;
+  --c-ink: #0a0a0b;
+  --c-muted: #6e6e6e;
   --c-accent: #0e7490;
   --c-accent-soft: rgba(14, 116, 144, 0.12);
 }
 
 [data-theme="dark"] {
-  /* dark gray, not pure black */
-  --c-app: #181b21;
-  --c-panel: #21252d;
-  --c-elevated: #2b303a;
-  --c-line: #363c47;
-  --c-ink: #e7eaef;
-  --c-muted: #98a1ae;
+  /* Hersh's near-black: page darker than panels, neutral greys, white text */
+  --c-app: #0a0a0b;
+  --c-panel: #121214;
+  --c-elevated: #1c1c1f;
+  --c-line: #26262a;
+  --c-ink: #ececec;
+  --c-muted: #9b9b9b;
   --c-accent: #2fd0e6;
   --c-accent-soft: rgba(47, 208, 230, 0.14);
 }
