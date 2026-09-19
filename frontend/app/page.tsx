@@ -7,6 +7,7 @@ import { API_BASE, PlaybackOptions, audioUrl } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import { squareCoverUrl } from "@/lib/image";
 import { setThumbRepairHandler } from "@/lib/thumbRepair";
+import { useOffline } from "@/lib/offline";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   cloudAddToPlaylist,
@@ -188,6 +189,13 @@ export default function Home() {
     return () => setThumbRepairHandler(null);
   }, [user]);
 
+  const offline = useOffline(tracks, hydrated);
+  // offline, only tracks saved on the device can play
+  const unavailableIds = useMemo(() => {
+    if (offline.online) return new Set<string>();
+    return new Set(tracks.filter((t) => !offline.saved.has(audioUrl(t.filename))).map((t) => t.id));
+  }, [offline.online, offline.saved, tracks]);
+
   const trackById = useMemo(() => new Map(tracks.map((t) => [t.id, t])), [tracks]);
   const currentTrack = currentId ? (trackById.get(currentId) ?? null) : null;
   // The fade/gap in effect when a track starts stays with it: changing the setting
@@ -208,7 +216,10 @@ export default function Home() {
     [tracks, playlists, trackById]
   );
 
-  const queue = useMemo(() => tracksFor(queueSource), [tracksFor, queueSource]);
+  const queue = useMemo(
+    () => tracksFor(queueSource).filter((t) => !unavailableIds.has(t.id)),
+    [tracksFor, queueSource, unavailableIds]
+  );
   const viewTracks = useMemo(() => tracksFor(view), [tracksFor, view]);
   const viewPlaylist = playlists.find((p) => p.id === view) ?? null;
 
@@ -216,6 +227,10 @@ export default function Home() {
 
   const playTrack = useCallback(
     (id: string, source?: string) => {
+      if (unavailableIds.has(id)) {
+        setNotice("Not saved for offline");
+        return;
+      }
       // an explicit play cancels any pending session restore
       const restoring = pendingRestoreRef.current !== null;
       pendingRestoreRef.current = null;
@@ -231,7 +246,7 @@ export default function Home() {
       setCurrentId(id);
       setIsPlaying(true);
     },
-    [currentId]
+    [currentId, unavailableIds]
   );
 
   // The <audio> src follows currentTrack; start playback whenever the track changes
@@ -659,7 +674,7 @@ export default function Home() {
             </div>
           ) : view === "settings" ? (
             <div key="settings" className="anim-view flex-1 overflow-y-auto overscroll-contain px-4 py-6 md:px-8 md:py-10">
-              <SettingsPanel playbackOpts={playbackOpts} onPlaybackOpts={setPlaybackOpts} />
+              <SettingsPanel playbackOpts={playbackOpts} onPlaybackOpts={setPlaybackOpts} offline={offline} />
             </div>
           ) : viewPlaylist ? (
             // Spotify-style playlist view: the banner header scrolls with the list
@@ -677,6 +692,7 @@ export default function Home() {
                 emptyHint="This playlist is empty. Add tracks from your library with the three-dots menu on any track."
                 currentId={currentId}
                 isPlaying={isPlaying}
+                unavailableIds={unavailableIds}
                 playlists={playlists}
                 isPlaylistView
                 onPlay={(trackId) => playTrack(trackId, view)}
@@ -694,7 +710,14 @@ export default function Home() {
               <div className="shrink-0 px-4 pt-5 md:px-8 md:pt-8">
                 <DownloadForm downloading={downloading} error={downloadError} onDownload={handleDownload} />
                 <div className="mt-6 mb-3 flex items-baseline justify-between gap-3">
-                  <h1 className="truncate text-2xl font-bold tracking-tight">Library</h1>
+                  <h1 className="flex items-center gap-2.5 truncate text-2xl font-bold tracking-tight">
+                    Library
+                    {!offline.online && (
+                      <span className="rounded-full border border-line px-2.5 py-0.5 text-xs font-medium tracking-normal text-muted">
+                        Offline
+                      </span>
+                    )}
+                  </h1>
                   <span className="shrink-0 text-sm text-muted tabular-nums">
                     {viewTracks.length} {viewTracks.length === 1 ? "track" : "tracks"}
                   </span>
@@ -707,6 +730,7 @@ export default function Home() {
                   emptyHint="Paste a YouTube or TikTok link above to download your first track."
                   currentId={currentId}
                   isPlaying={isPlaying}
+                  unavailableIds={unavailableIds}
                   playlists={playlists}
                   isPlaylistView={false}
                   onPlay={(trackId) => playTrack(trackId, view)}

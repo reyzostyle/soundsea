@@ -30,6 +30,8 @@ type Props = {
   emptyHint: string;
   currentId: string | null;
   isPlaying: boolean;
+  /** offline and not saved on the device: shown dimmed */
+  unavailableIds?: Set<string>;
   playlists: Playlist[];
   isPlaylistView: boolean;
   onPlay: (trackId: string) => void;
@@ -173,6 +175,7 @@ export default function TrackList({
   emptyHint,
   currentId,
   isPlaying,
+  unavailableIds,
   playlists,
   isPlaylistView,
   onPlay,
@@ -262,7 +265,7 @@ export default function TrackList({
               style={drag ? { transform: `translateY(${isDragged ? drag.dy : rowShift(index)}px)` } : undefined}
             >
               <div
-                className="group flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-elevated/60"
+                className={`group flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-elevated/60 ${unavailableIds?.has(t.id) ? "opacity-40" : ""}`}
                 onClick={() => (isCurrent ? onTogglePlay() : onPlay(t.id))}
               >
                 {canDrag && (

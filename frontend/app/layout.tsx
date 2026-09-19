@@ -7,6 +7,8 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 export const metadata: Metadata = {
   title: "SoundSea",
   description: "Download audio from YouTube and TikTok links and play it locally.",
+  appleWebApp: { capable: true, title: "SoundSea", statusBarStyle: "black" },
+  icons: { apple: "/logo.png" },
 };
 
 // Set the theme before first paint so there is no flash of the wrong colors.

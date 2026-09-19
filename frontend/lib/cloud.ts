@@ -7,7 +7,7 @@ import { Playlist, Track } from "./types";
 export async function fetchLibrary(userId: string): Promise<{ tracks: Track[]; playlists: Playlist[] }> {
   if (!supabase) return { tracks: [], playlists: [] };
 
-  const [{ data: trackRows }, { data: plRows }, { data: ptRows }] = await Promise.all([
+  const [{ data: trackRows, error: e1 }, { data: plRows, error: e2 }, { data: ptRows, error: e3 }] = await Promise.all([
     supabase
       .from("tracks")
       .select("*")
@@ -19,6 +19,10 @@ export async function fetchLibrary(userId: string): Promise<{ tracks: Track[]; p
     supabase.from("playlists").select("*").eq("user_id", userId).order("created_at", { ascending: true }),
     supabase.from("playlist_tracks").select("playlist_id, track_id, position"),
   ]);
+
+  // a failed load (offline, say) must not look like an empty account
+  const failed = e1 || e2 || e3;
+  if (failed) throw new Error(failed.message);
 
   const tracks: Track[] = (trackRows ?? []).map((r) => ({
     id: r.id,

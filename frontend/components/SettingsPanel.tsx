@@ -7,13 +7,15 @@ import ProfileEditor from "./ProfileEditor";
 import { useAuth } from "@/contexts/AuthContext";
 import Slider from "./Slider";
 import { PlaybackOptions } from "@/lib/api";
+import { OfflineState } from "@/lib/offline";
 
 type Props = {
   playbackOpts: PlaybackOptions;
   onPlaybackOpts: (opts: PlaybackOptions) => void;
+  offline: OfflineState;
 };
 
-export default function SettingsPanel({ playbackOpts, onPlaybackOpts }: Props) {
+export default function SettingsPanel({ playbackOpts, onPlaybackOpts, offline }: Props) {
   const { theme, setTheme } = useTheme();
   const { user } = useAuth();
 
@@ -69,6 +71,40 @@ export default function SettingsPanel({ playbackOpts, onPlaybackOpts }: Props) {
           />
         </section>
 
+
+        {offline.supported && (
+          <section className="flex flex-col gap-3 rounded-lg border border-line bg-panel px-4 py-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-ink">Keep library on this device</p>
+                <p className="mt-0.5 text-xs text-muted">
+                  Tracks play without internet. New ones save automatically. Fade and gap need a connection.
+                </p>
+              </div>
+              <button
+                role="switch"
+                aria-checked={offline.enabled}
+                onClick={() => offline.setEnabled(!offline.enabled)}
+                className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${offline.enabled ? "bg-accent" : "bg-elevated"}`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                    offline.enabled ? "translate-x-5" : ""
+                  }`}
+                />
+              </button>
+            </div>
+            {offline.enabled && (
+              <p className="text-xs text-muted tabular-nums">
+                {offline.progress
+                  ? `Saving ${offline.progress.done} of ${offline.progress.total} tracks`
+                  : `${offline.saved.size} ${offline.saved.size === 1 ? "track" : "tracks"} saved${
+                      offline.usageBytes ? ` · ${Math.round(offline.usageBytes / 1048576)} MB` : ""
+                    }`}
+              </p>
+            )}
+          </section>
+        )}
 
         <a
           href="https://discord.gg/VPQ3xncf5Q"
