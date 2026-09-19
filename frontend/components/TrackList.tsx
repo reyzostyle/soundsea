@@ -6,6 +6,7 @@ import { Playlist, Track } from "@/lib/types";
 import { formatTime } from "@/lib/format";
 import { downloadFileUrl } from "@/lib/api";
 import TrackCover from "./TrackCover";
+import ConfirmDialog from "./ConfirmDialog";
 import {
   ChevronUpIcon,
   DownloadIcon,
@@ -188,6 +189,7 @@ export default function TrackList({
   onReorder,
 }: Props) {
   const [menuId, setMenuId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<Track | null>(null);
   const [drag, setDrag] = useState<DragState | null>(null);
   const rowHeight = useRef(68);
   const startYRef = useRef(0);
@@ -333,7 +335,21 @@ export default function TrackList({
           onStudio={onStudio ? () => onStudio(menuTrack.id) : undefined}
           onSetPublic={onSetPublic ? (v) => onSetPublic(menuTrack.id, v) : undefined}
           onAddToPlaylist={(plId) => onAddToPlaylist(plId, menuTrack.id)}
-          onRemove={() => onRemove(menuTrack.id)}
+          onRemove={() => (isPlaylistView ? onRemove(menuTrack.id) : setConfirmDelete(menuTrack))}
+        />
+      )}
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Delete this track?"
+          body={`“${confirmDelete.title}” goes from your library and every playlist it is in.`}
+          confirmLabel="Delete"
+          destructive
+          onCancel={() => setConfirmDelete(null)}
+          onConfirm={() => {
+            onRemove(confirmDelete.id);
+            setConfirmDelete(null);
+          }}
         />
       )}
     </>

@@ -4,7 +4,7 @@ import { CSSProperties } from "react";
 import { RepeatMode, Track } from "@/lib/types";
 import { formatTime } from "@/lib/format";
 import TrackCover from "./TrackCover";
-import { NextIcon, PauseIcon, PlayIcon, PrevIcon, RepeatIcon, ShuffleIcon, VolumeIcon } from "./Icons";
+import { NextIcon, PauseIcon, PlayIcon, PrevIcon, RepeatIcon, RepeatOneIcon, ShuffleIcon, VolumeIcon } from "./Icons";
 
 type Props = {
   track: Track | null;
@@ -21,6 +21,8 @@ type Props = {
   onCycleRepeat: () => void;
   onToggleShuffle: () => void;
   onVolume: (v: number) => void;
+  /** phone only: tapping the bar opens the full-screen player */
+  onExpand: () => void;
 };
 
 const repeatLabel: Record<RepeatMode, string> = {
@@ -44,6 +46,7 @@ export default function PlayerBar({
   onCycleRepeat,
   onToggleShuffle,
   onVolume,
+  onExpand,
 }: Props) {
   const total = duration || track?.duration || 0;
   const pct = total ? Math.min(100, (position / total) * 100) : 0;
@@ -52,11 +55,19 @@ export default function PlayerBar({
     <div className="relative shrink-0 border-t border-line bg-app">
       <div className="mx-auto flex max-w-6xl flex-col gap-1.5 px-4 py-3 md:px-8">
         <div className="flex items-center gap-3">
-          <TrackCover track={track} className="h-11 w-11 shrink-0 rounded-md" />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-ink">{track ? track.title : "Nothing playing"}</p>
-            {!track && <p className="truncate text-xs text-muted">Download a track to get started</p>}
-          </div>
+          {/* on a phone the track itself is a button: it opens the full-screen player */}
+          <button
+            onClick={onExpand}
+            disabled={!track}
+            aria-label={track ? "Open full-screen player" : undefined}
+            className="flex min-w-0 flex-1 items-center gap-3 text-left md:pointer-events-none"
+          >
+            <TrackCover track={track} className="h-11 w-11 shrink-0 rounded-md" />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-medium text-ink">{track ? track.title : "Nothing playing"}</span>
+              {!track && <span className="block truncate text-xs text-muted">Download a track to get started</span>}
+            </span>
+          </button>
           <div className="flex items-center gap-1 sm:gap-2">
             <button
               onClick={onToggleShuffle}
@@ -98,12 +109,7 @@ export default function PlayerBar({
                 repeat === "off" ? "text-muted hover:text-ink" : "text-accent"
               }`}
             >
-              <RepeatIcon className="h-5 w-5" />
-              {repeat === "one" && (
-                <span className="absolute -top-0.5 -right-0.5 rounded-full bg-accent px-1 text-[9px] leading-3 font-bold text-app">
-                  1
-                </span>
-              )}
+              {repeat === "one" ? <RepeatOneIcon className="h-5 w-5" /> : <RepeatIcon className="h-5 w-5" />}
             </button>
             {/* volume: desktop only (iOS ignores programmatic volume) */}
             <div className="hidden items-center gap-1.5 pl-2 md:flex">

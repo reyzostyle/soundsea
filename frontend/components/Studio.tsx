@@ -15,6 +15,7 @@ import {
   renderEdit,
 } from "@/lib/studio";
 import TrackCover from "./TrackCover";
+import ConfirmDialog from "./ConfirmDialog";
 import Slider from "./Slider";
 import { CheckIcon, ChevronUpIcon, PauseIcon, PlayIcon, SearchIcon, SlidersIcon, Spinner } from "./Icons";
 
@@ -37,13 +38,20 @@ type Props = {
 
 export default function Studio({ tracks, trackId, onSelect, onSaved, onReplaced, onPreviewStart, onPlayTrack, mainPlaying, onRegisterToggle }: Props) {
   const track = trackId ? (tracks.find((t) => t.id === trackId) ?? null) : null;
+  const [dirty, setDirty] = useState(false);
+  const [confirmLeave, setConfirmLeave] = useState(false);
+
+  const leave = () => {
+    if (dirty) setConfirmLeave(true);
+    else onSelect(null);
+  };
 
   return (
     <div className="mx-auto w-full max-w-3xl">
       <div className="mb-5 flex items-center gap-2">
         {track && (
           <button
-            onClick={() => onSelect(null)}
+            onClick={leave}
             className="-ml-2 rounded-full p-2 text-muted transition-colors hover:bg-elevated hover:text-ink"
             aria-label="Back to track list"
             title="Back"
@@ -63,16 +71,75 @@ export default function Studio({ tracks, trackId, onSelect, onSaved, onReplaced,
           onPlayTrack={onPlayTrack}
           mainPlaying={mainPlaying}
           onRegisterToggle={onRegisterToggle}
+          onDirtyChange={setDirty}
         />
       ) : (
-        <TrackPicker tracks={tracks} onSelect={onSelect} />
+        <TrackPicker tracks={tracks} onSelect={onSelect} onPreviewStart={onPreviewStart} mainPlaying={mainPlaying} />
+      )}
+      {confirmLeave && (
+        <ConfirmDialog
+          title="Leave this edit?"
+          body="Your changes haven't been saved yet."
+          confirmLabel="Discard"
+          destructive
+          onCancel={() => setConfirmLeave(false)}
+          onConfirm={() => {
+            setConfirmLeave(false);
+            onSelect(null);
+          }}
+        />
       )}
     </div>
   );
 }
 
-function TrackPicker({ tracks, onSelect }: { tracks: Track[]; onSelect: (id: string) => void }) {
+function TrackPicker({
+  tracks,
+  onSelect,
+  onPreviewStart,
+  mainPlaying,
+}: {
+  tracks: Track[];
+  onSelect: (id: string) => void;
+  onPreviewStart: () => void;
+  mainPlaying: boolean;
+}) {
   const [query, setQuery] = useState("");
+  const [previewId, setPreviewId] = useState<string | null>(null);
+  const [previewPlaying, setPreviewPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const a = new Audio();
+    a.onplay = () => setPreviewPlaying(true);
+    a.onpause = () => setPreviewPlaying(false);
+    a.onended = () => setPreviewPlaying(false);
+    audioRef.current = a;
+    return () => {
+      a.pause();
+      a.src = "";
+    };
+  }, []);
+
+  useEffect(() => {
+    if (mainPlaying) audioRef.current?.pause();
+  }, [mainPlaying]);
+
+  const togglePreview = (t: Track) => {
+    const a = audioRef.current;
+    if (!a) return;
+    if (previewId === t.id && !a.paused) {
+      a.pause();
+      return;
+    }
+    if (previewId !== t.id) {
+      a.src = audioUrl(t.filename);
+      setPreviewId(t.id);
+    }
+    onPreviewStart();
+    a.play().catch(() => {});
+  };
+
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
     return q ? tracks.filter((t) => t.title.toLowerCase().includes(q)) : tracks;
@@ -84,7 +151,9 @@ function TrackPicker({ tracks, onSelect }: { tracks: Track[]; onSelect: (id: str
 
   return (
     <>
-      <p className="mb-4 text-sm text-muted">Pick a track to trim, speed up, slow down, add bass or a fade. The original stays as it is.</p>
+      <p className="mb-4 max-w-md text-sm leading-relaxed text-balance text-muted">
+        Pick a track to trim, speed up, slow down or add bass. Your original stays as it is.
+      </p>
       <div className="mb-3 flex h-11 items-center gap-2 rounded-full border border-line bg-panel px-4 focus-within:border-accent">
         <SearchIcon className="h-4 w-4 shrink-0 text-muted" />
         <input
@@ -96,16 +165,33 @@ function TrackPicker({ tracks, onSelect }: { tracks: Track[]; onSelect: (id: str
       </div>
       <ul className="-mx-3">
         {shown.map((t) => (
-          <li key={t.id}>
+          <li
+            key={t.id}
+            className="group flex items-center gap-3 rounded-md px-3 py-2 transition-colors hover:bg-elevated/60"
+          >
+            <button
+              onClick={() => togglePreview(t)}
+              className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md"
+              aria-label={previewId === t.id && previewPlaying ? "Pause preview" : "Play preview"}
+            >
+              <TrackCover track={t} className="h-full w-full" />
+              <span
+                className={`absolute inset-0 flex items-center justify-center bg-black/50 text-white transition-opacity ${
+                  previewId === t.id ? "" : "opacity-0 group-hover:opacity-100"
+                }`}
+              >
+                {previewId === t.id && previewPlaying ? <PauseIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}
+              </span>
+            </button>
+            <button onClick={() => onSelect(t.id)} className="min-w-0 flex-1 truncate py-1 text-left text-sm text-ink">
+              {t.title}
+            </button>
+            <span className="shrink-0 text-xs text-muted tabular-nums">{formatTime(t.duration)}</span>
             <button
               onClick={() => onSelect(t.id)}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-elevated/60"
+              className="h-8 shrink-0 rounded-full border border-line px-3 text-xs font-medium text-ink transition-colors hover:bg-elevated"
             >
-              <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md">
-                <TrackCover track={t} className="h-full w-full" />
-              </div>
-              <span className="min-w-0 flex-1 truncate text-sm text-ink">{t.title}</span>
-              <span className="shrink-0 text-xs text-muted tabular-nums">{formatTime(t.duration)}</span>
+              Edit
             </button>
           </li>
         ))}
@@ -123,6 +209,7 @@ function Editor({
   onPlayTrack,
   mainPlaying,
   onRegisterToggle,
+  onDirtyChange,
 }: {
   track: Track;
   onSaved: (track: Track) => void;
@@ -131,6 +218,7 @@ function Editor({
   onPlayTrack: (trackId: string) => void;
   mainPlaying: boolean;
   onRegisterToggle: (toggle: (() => void) | null) => void;
+  onDirtyChange: (dirty: boolean) => void;
 }) {
   const [buffer, setBuffer] = useState<AudioBuffer | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -142,6 +230,16 @@ function Editor({
   const [saved, setSaved] = useState<Track | null>(null);
   const [replaced, setReplaced] = useState(false);
   const previewRef = useRef<StudioPreview | null>(null);
+  const baselineRef = useRef<StudioSettings | null>(null);
+
+  // "unsaved changes" means the controls moved away from how this file opened; saving
+  // over the track re-opens it, and saving a copy leaves this edit still unsaved
+  useEffect(() => {
+    const base = baselineRef.current;
+    onDirtyChange(!!s && !!base && (Object.keys(base) as (keyof StudioSettings)[]).some((k) => Math.abs(s[k] - base[k]) > 0.001));
+  }, [s, onDirtyChange]);
+
+  useEffect(() => () => onDirtyChange(false), [onDirtyChange]);
 
   useEffect(() => {
     let cancelled = false;
@@ -154,7 +252,9 @@ function Editor({
         if (cancelled) return;
         previewRef.current = new StudioPreview(buf);
         setBuffer(buf);
-        setS({ start: 0, end: buf.duration, speed: 1, bass: 0, reverb: 0, fadeIn: 0, fadeOut: 0 });
+        const fresh: StudioSettings = { start: 0, end: buf.duration, speed: 1, bass: 0, reverb: 0, fadeIn: 0, fadeOut: 0 };
+        baselineRef.current = fresh;
+        setS(fresh);
       })
       .catch((e) => !cancelled && setLoadError(e instanceof Error ? e.message : "Could not load the audio."));
     return () => {

@@ -1,443 +1,360 @@
+// One icon set, one set of rules: a 24 grid, 1.6 stroke, round caps and joins, and
+// no filled shapes except the transport controls, which read better solid at small
+// sizes. Everything is drawn on the same optical weight so a row of icons looks like
+// a row of icons and not a collection.
+
 type IconProps = { className?: string };
 
-export function PlayIcon({ className = "h-5 w-5" }: IconProps) {
+function Icon({ className = "h-5 w-5", children }: IconProps & { children: React.ReactNode }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      {children}
+    </svg>
+  );
+}
+
+function Solid({ className = "h-5 w-5", children }: IconProps & { children: React.ReactNode }) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
-      <path d="M7 4.5v15a1 1 0 0 0 1.54.84l11.5-7.5a1 1 0 0 0 0-1.68L8.54 3.66A1 1 0 0 0 7 4.5Z" />
+      {children}
     </svg>
   );
 }
 
-export function PauseIcon({ className = "h-5 w-5" }: IconProps) {
+export function PlayIcon({ className }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
-      <rect x="6" y="4.5" width="4" height="15" rx="1.2" />
-      <rect x="14" y="4.5" width="4" height="15" rx="1.2" />
-    </svg>
+    <Solid className={className}>
+      <path d="M8 5.2v13.6c0 .9 1 1.5 1.8 1L20.4 13a1.2 1.2 0 0 0 0-2L9.8 4.2A1.2 1.2 0 0 0 8 5.2Z" />
+    </Solid>
   );
 }
 
-export function PrevIcon({ className = "h-5 w-5" }: IconProps) {
+export function PauseIcon({ className }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
-      <path d="M19.5 18.6 9.7 12l9.8-6.6v13.2Z" />
-      <rect x="5" y="5" width="2.4" height="14" rx="1" />
-    </svg>
+    <Solid className={className}>
+      <rect x="6.5" y="5" width="3.6" height="14" rx="1.4" />
+      <rect x="13.9" y="5" width="3.6" height="14" rx="1.4" />
+    </Solid>
   );
 }
 
-export function NextIcon({ className = "h-5 w-5" }: IconProps) {
+export function PrevIcon({ className }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
-      <path d="M4.5 5.4 14.3 12l-9.8 6.6V5.4Z" />
-      <rect x="16.6" y="5" width="2.4" height="14" rx="1" />
-    </svg>
+    <Solid className={className}>
+      <rect x="5" y="5.5" width="2.4" height="13" rx="1.2" />
+      <path d="M19 6.6v10.8c0 .9-1 1.5-1.8 1l-8.1-5.4a1.2 1.2 0 0 1 0-2l8.1-5.4c.8-.5 1.8.1 1.8 1Z" />
+    </Solid>
   );
 }
 
-export function RepeatIcon({ className = "h-5 w-5" }: IconProps) {
+export function NextIcon({ className }: IconProps) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="m17 2 4 4-4 4" />
-      <path d="M3 11v-1a4 4 0 0 1 4-4h14" />
-      <path d="m7 22-4-4 4-4" />
-      <path d="M21 13v1a4 4 0 0 1-4 4H3" />
-    </svg>
+    <Solid className={className}>
+      <rect x="16.6" y="5.5" width="2.4" height="13" rx="1.2" />
+      <path d="M5 6.6v10.8c0 .9 1 1.5 1.8 1l8.1-5.4a1.2 1.2 0 0 0 0-2L6.8 5.6C6 5.1 5 5.7 5 6.6Z" />
+    </Solid>
   );
 }
 
-export function PlusIcon({ className = "h-5 w-5" }: IconProps) {
+export function RepeatIcon({ className }: IconProps) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M12 5v14M5 12h14" />
-    </svg>
+    <Icon className={className}>
+      <path d="M4 9.5A3.5 3.5 0 0 1 7.5 6H18" />
+      <path d="m15.5 3.5 2.8 2.5-2.8 2.5" />
+      <path d="M20 14.5a3.5 3.5 0 0 1-3.5 3.5H6" />
+      <path d="m8.5 20.5-2.8-2.5 2.8-2.5" />
+    </Icon>
   );
 }
 
-export function MinusIcon({ className = "h-5 w-5" }: IconProps) {
+export function RepeatOneIcon({ className }: IconProps) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M5 12h14" />
-    </svg>
+    <Icon className={className}>
+      <path d="M4 9.5A3.5 3.5 0 0 1 7.5 6H18" />
+      <path d="m15.5 3.5 2.8 2.5-2.8 2.5" />
+      <path d="M20 14.5a3.5 3.5 0 0 1-3.5 3.5H6" />
+      <path d="m8.5 20.5-2.8-2.5 2.8-2.5" />
+      <path d="M11.4 10.6 13 9.6V15" />
+    </Icon>
   );
 }
 
-export function TrashIcon({ className = "h-5 w-5" }: IconProps) {
+export function PlusIcon({ className }: IconProps) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M3 6h18" />
-      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-      <path d="M10 11v6M14 11v6" />
-    </svg>
+    <Icon className={className}>
+      <path d="M12 5.5v13M5.5 12h13" />
+    </Icon>
   );
 }
 
-export function PencilIcon({ className = "h-5 w-5" }: IconProps) {
+export function MinusIcon({ className }: IconProps) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-    </svg>
+    <Icon className={className}>
+      <path d="M5.5 12h13" />
+    </Icon>
   );
 }
 
-export function XIcon({ className = "h-5 w-5" }: IconProps) {
+export function TrashIcon({ className }: IconProps) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M18 6 6 18M6 6l12 12" />
-    </svg>
+    <Icon className={className}>
+      <path d="M4.5 6.5h15" />
+      <path d="M9.5 6.5V5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1.5" />
+      <path d="M6.5 6.5 7.3 19a1 1 0 0 0 1 .9h7.4a1 1 0 0 0 1-.9l.8-12.5" />
+      <path d="M10.5 10v6M13.5 10v6" />
+    </Icon>
   );
 }
 
-export function MenuIcon({ className = "h-5 w-5" }: IconProps) {
+export function PencilIcon({ className }: IconProps) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M4 6h16M4 12h16M4 18h16" />
-    </svg>
+    <Icon className={className}>
+      <path d="M15.4 4.8a2 2 0 0 1 2.8 0l1 1a2 2 0 0 1 0 2.8L9.4 17.4l-4 1.2 1.2-4Z" />
+      <path d="m14.2 6 3.8 3.8" />
+    </Icon>
   );
 }
 
-export function MusicIcon({ className = "h-5 w-5" }: IconProps) {
+export function XIcon({ className }: IconProps) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M9 18V5l12-2v13" />
-      <circle cx="6" cy="18" r="3" />
-      <circle cx="18" cy="16" r="3" />
-    </svg>
+    <Icon className={className}>
+      <path d="m6.5 6.5 11 11M17.5 6.5l-11 11" />
+    </Icon>
   );
 }
 
-export function WaveIcon({ className = "h-5 w-5" }: IconProps) {
+export function MenuIcon({ className }: IconProps) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M2 10c2 0 2-3 4-3s2 3 4 3 2-3 4-3 2 3 4 3 2-3 4-3" />
-      <path d="M2 16c2 0 2-3 4-3s2 3 4 3 2-3 4-3 2 3 4 3 2-3 4-3" />
-    </svg>
+    <Icon className={className}>
+      <path d="M4.5 7h15M4.5 12h15M4.5 17h15" />
+    </Icon>
   );
 }
 
-export function DownloadIcon({ className = "h-5 w-5" }: IconProps) {
+export function MusicIcon({ className }: IconProps) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-      <path d="m7 10 5 5 5-5" />
-      <path d="M12 15V3" />
-    </svg>
+    <Icon className={className}>
+      <path d="M9.5 18V6.6l9-1.8V16" />
+      <circle cx="7" cy="18" r="2.5" />
+      <circle cx="16" cy="16" r="2.5" />
+    </Icon>
+  );
+}
+
+export function WaveIcon({ className }: IconProps) {
+  return (
+    <Icon className={className}>
+      <path d="M4 11v2M8 8v8M12 5v14M16 8v8M20 11v2" />
+    </Icon>
+  );
+}
+
+export function DownloadIcon({ className }: IconProps) {
+  return (
+    <Icon className={className}>
+      <path d="M12 4v10" />
+      <path d="m8 10.5 4 3.5 4-3.5" />
+      <path d="M4.5 17.5v1a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-1" />
+    </Icon>
   );
 }
 
 export function GoogleIcon({ className = "h-5 w-5" }: IconProps) {
+  // the one icon that keeps its own colors: it is a brand mark, not part of the set
   return (
     <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
       <path
         fill="#4285F4"
-        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1Z"
+        d="M21.6 12.23c0-.68-.06-1.36-.18-2.02H12v3.82h5.39a4.6 4.6 0 0 1-2 3.02v2.5h3.23c1.89-1.74 2.98-4.3 2.98-7.32Z"
       />
       <path
         fill="#34A853"
-        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z"
+        d="M12 22c2.7 0 4.96-.9 6.62-2.44l-3.23-2.5c-.9.6-2.05.95-3.39.95-2.6 0-4.81-1.76-5.6-4.12H3.07v2.58A10 10 0 0 0 12 22Z"
       />
-      <path
-        fill="#FBBC05"
-        d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84Z"
-      />
+      <path fill="#FBBC05" d="M6.4 13.89a6 6 0 0 1 0-3.78V7.53H3.07a10 10 0 0 0 0 8.94l3.33-2.58Z" />
       <path
         fill="#EA4335"
-        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84C6.71 7.3 9.14 5.38 12 5.38Z"
+        d="M12 5.98c1.47 0 2.79.5 3.83 1.5l2.86-2.86C16.96 2.99 14.7 2 12 2a10 10 0 0 0-8.93 5.53L6.4 10.1C7.19 7.75 9.4 5.98 12 5.98Z"
       />
     </svg>
   );
 }
 
-export function LogOutIcon({ className = "h-5 w-5" }: IconProps) {
+export function LogOutIcon({ className }: IconProps) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-      <path d="m16 17 5-5-5-5" />
-      <path d="M21 12H9" />
-    </svg>
+    <Icon className={className}>
+      <path d="M14 4.5h3.5a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H14" />
+      <path d="M10 8 6 12l4 4" />
+      <path d="M6 12h8" />
+    </Icon>
   );
 }
 
-export function SettingsIcon({ className = "h-5 w-5" }: IconProps) {
+export function SettingsIcon({ className }: IconProps) {
+  // a cog, not a sun: the theme toggle already owns rays around a circle
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
+    <Icon className={className}>
       <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
-    </svg>
+      <path d="M19.1 14.2a1.4 1.4 0 0 0 .3 1.5l.1.1a1.7 1.7 0 1 1-2.4 2.4l-.1-.1a1.4 1.4 0 0 0-2.4 1v.3a1.7 1.7 0 0 1-3.4 0v-.2a1.4 1.4 0 0 0-2.4-1l-.1.1a1.7 1.7 0 1 1-2.4-2.4l.1-.1a1.4 1.4 0 0 0-1-2.4h-.3a1.7 1.7 0 0 1 0-3.4h.2a1.4 1.4 0 0 0 1-2.4l-.1-.1a1.7 1.7 0 1 1 2.4-2.4l.1.1a1.4 1.4 0 0 0 1.5.3h.1a1.4 1.4 0 0 0 .9-1.3v-.3a1.7 1.7 0 0 1 3.4 0v.2a1.4 1.4 0 0 0 2.4 1l.1-.1a1.7 1.7 0 1 1 2.4 2.4l-.1.1a1.4 1.4 0 0 0-.3 1.5v.1a1.4 1.4 0 0 0 1.3.9h.3a1.7 1.7 0 0 1 0 3.4h-.2a1.4 1.4 0 0 0-1.3.9Z" />
+    </Icon>
   );
 }
 
-export function SunIcon({ className = "h-5 w-5" }: IconProps) {
+export function SunIcon({ className }: IconProps) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
+    <Icon className={className}>
       <circle cx="12" cy="12" r="4" />
-      <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4" />
-    </svg>
+      <path d="M12 3v2M12 19v2M21 12h-2M5 12H3M18.4 5.6 17 7M7 17l-1.4 1.4M18.4 18.4 17 17M7 7 5.6 5.6" />
+    </Icon>
   );
 }
 
-export function MoonIcon({ className = "h-5 w-5" }: IconProps) {
+export function MoonIcon({ className }: IconProps) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" />
-    </svg>
+    <Icon className={className}>
+      <path d="M20 14.2A8 8 0 0 1 9.8 4a8 8 0 1 0 10.2 10.2Z" />
+    </Icon>
   );
 }
 
-export function MoreIcon({ className = "h-5 w-5" }: IconProps) {
+export function MoreIcon({ className }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
-      <circle cx="12" cy="5" r="2" />
-      <circle cx="12" cy="12" r="2" />
-      <circle cx="12" cy="19" r="2" />
-    </svg>
+    <Solid className={className}>
+      <circle cx="12" cy="5.5" r="1.7" />
+      <circle cx="12" cy="12" r="1.7" />
+      <circle cx="12" cy="18.5" r="1.7" />
+    </Solid>
   );
 }
 
-export function ChevronUpIcon({ className = "h-5 w-5" }: IconProps) {
+export function ChevronUpIcon({ className }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
-      <path d="m6 15 6-6 6 6" />
-    </svg>
+    <Icon className={className}>
+      <path d="m6.5 14.5 5.5-5 5.5 5" />
+    </Icon>
   );
 }
 
-export function ChevronDownIcon({ className = "h-5 w-5" }: IconProps) {
+export function ChevronDownIcon({ className }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
-      <path d="m6 9 6 6 6-6" />
-    </svg>
+    <Icon className={className}>
+      <path d="m6.5 9.5 5.5 5 5.5-5" />
+    </Icon>
   );
 }
 
-export function CheckIcon({ className = "h-5 w-5" }: IconProps) {
+export function CheckIcon({ className }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
-      <path d="M20 6 9 17l-5-5" />
-    </svg>
+    <Icon className={className}>
+      <path d="m5 12.5 4.5 4.5L19 7" />
+    </Icon>
   );
 }
 
-export function InfoIcon({ className = "h-5 w-5" }: IconProps) {
+export function InfoIcon({ className }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 16v-4M12 8h.01" />
-    </svg>
+    <Icon className={className}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 11v5.5" />
+      <path d="M12 7.8h.01" />
+    </Icon>
   );
 }
 
-export function ExternalLinkIcon({ className = "h-5 w-5" }: IconProps) {
+export function ExternalLinkIcon({ className }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
-      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-      <path d="M15 3h6v6" />
-      <path d="M10 14 21 3" />
-    </svg>
+    <Icon className={className}>
+      <path d="M13.5 5h5.5v5.5" />
+      <path d="M19 5l-7.5 7.5" />
+      <path d="M18 14.5v3.5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3.5" />
+    </Icon>
   );
 }
 
-export function GripIcon({ className = "h-5 w-5" }: IconProps) {
+export function GripIcon({ className }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
-      <circle cx="9" cy="6" r="1.5" />
-      <circle cx="15" cy="6" r="1.5" />
-      <circle cx="9" cy="12" r="1.5" />
-      <circle cx="15" cy="12" r="1.5" />
-      <circle cx="9" cy="18" r="1.5" />
-      <circle cx="15" cy="18" r="1.5" />
-    </svg>
+    <Icon className={className}>
+      <path d="M8 8h.01M8 12h.01M8 16h.01M16 8h.01M16 12h.01M16 16h.01" />
+    </Icon>
   );
 }
 
-export function VolumeIcon({ className = "h-5 w-5" }: IconProps) {
+export function VolumeIcon({ className }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
-      <path d="M11 5 6 9H2v6h4l5 4V5Z" />
-      <path d="M15.5 8.5a5 5 0 0 1 0 7" />
-      <path d="M18.5 5.5a9 9 0 0 1 0 13" />
-    </svg>
+    <Icon className={className}>
+      <path d="M11 5.5 6.8 9H4.5a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h2.3L11 18.5Z" />
+      <path d="M15 9.5a3.5 3.5 0 0 1 0 5" />
+      <path d="M17.7 6.8a7 7 0 0 1 0 10.4" />
+    </Icon>
   );
 }
 
-export function ShareIcon({ className = "h-5 w-5" }: IconProps) {
+export function ShareIcon({ className }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
-      <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7" />
-      <path d="M16 6l-4-4-4 4" />
-      <path d="M12 2v14" />
-    </svg>
+    <Icon className={className}>
+      <path d="M12 15.5V4" />
+      <path d="m8.5 7.5 3.5-3.5 3.5 3.5" />
+      <path d="M5.5 12.5v6a1.5 1.5 0 0 0 1.5 1.5h10a1.5 1.5 0 0 0 1.5-1.5v-6" />
+    </Icon>
   );
 }
 
-export function ShuffleIcon({ className = "h-5 w-5" }: IconProps) {
+export function ShuffleIcon({ className }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
-      <path d="M16 3h5v5" />
-      <path d="M4 20 21 3" />
-      <path d="M21 16v5h-5" />
-      <path d="m15 15 6 6" />
-      <path d="M4 4l5 5" />
-    </svg>
+    <Icon className={className}>
+      <path d="M4 7h3.2c1 0 2 .5 2.6 1.4l4.4 7.2c.6.9 1.6 1.4 2.6 1.4H20" />
+      <path d="m17.5 4.5 2.5 2.5-2.5 2.5" />
+      <path d="m17.5 14.5 2.5 2.5-2.5 2.5" />
+      <path d="M4 17h3.2c1 0 2-.5 2.6-1.4l.7-1.1" />
+      <path d="m13.5 9.6.7-1.2A3 3 0 0 1 16.8 7H20" />
+    </Icon>
   );
 }
 
 export function Spinner({ className = "h-5 w-5" }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={`animate-spin ${className}`} aria-hidden="true">
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4Z" />
+      <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.6" className="opacity-25" />
+      <path d="M20.5 12A8.5 8.5 0 0 0 12 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   );
 }
 
-export function SlidersIcon({ className = "h-5 w-5" }: IconProps) {
+export function SlidersIcon({ className }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className={className} aria-hidden="true">
-      <path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0" />
-      <circle cx="16" cy="6" r="2" />
-      <circle cx="10" cy="12" r="2" />
-      <circle cx="18" cy="18" r="2" />
-    </svg>
+    <Icon className={className}>
+      <path d="M4.5 7.5h4M13.5 7.5h6" />
+      <path d="M4.5 16.5h6M15.5 16.5h4" />
+      <circle cx="11" cy="7.5" r="2.2" />
+      <circle cx="13" cy="16.5" r="2.2" />
+    </Icon>
   );
 }
 
-export function SearchIcon({ className = "h-5 w-5" }: IconProps) {
+export function SearchIcon({ className }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className={className} aria-hidden="true">
-      <circle cx="11" cy="11" r="7" />
-      <path d="m20 20-3.5-3.5" />
-    </svg>
+    <Icon className={className}>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="m20 20-4.2-4.2" />
+    </Icon>
   );
 }
 
-export function GlobeIcon({ className = "h-5 w-5" }: IconProps) {
+export function GlobeIcon({ className }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
-      <circle cx="12" cy="12" r="9" />
-      <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
-    </svg>
+    <Icon className={className}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M3.5 12h17" />
+      <path d="M12 3.5c2.2 2.3 3.4 5.3 3.4 8.5S14.2 18.2 12 20.5c-2.2-2.3-3.4-5.3-3.4-8.5S9.8 5.8 12 3.5Z" />
+    </Icon>
   );
 }

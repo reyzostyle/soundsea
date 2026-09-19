@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Playlist } from "@/lib/types";
+import ConfirmDialog from "./ConfirmDialog";
 import { CheckIcon, GripIcon, MusicIcon, PencilIcon, PlusIcon, GlobeIcon, SettingsIcon, SlidersIcon, TrashIcon, XIcon } from "./Icons";
 
 type Props = {
@@ -36,6 +37,7 @@ export default function Sidebar({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [drag, setDrag] = useState<DragState | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<Playlist | null>(null);
   const rowHeight = useRef(40);
   const startYRef = useRef(0);
 
@@ -215,7 +217,7 @@ export default function Sidebar({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onDelete(p.id);
+                  setConfirmDelete(p);
                 }}
                 className="hidden p-0.5 text-muted hover:text-red-500 group-hover:block"
                 aria-label={`Delete ${p.name}`}
@@ -264,6 +266,19 @@ export default function Sidebar({
           <p className="px-3 py-1 text-xs text-muted">No playlists yet. Click + to create one.</p>
         )}
       </aside>
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Delete this playlist?"
+          body={`“${confirmDelete.name}” goes away. The tracks in it stay in your library.`}
+          confirmLabel="Delete"
+          destructive
+          onCancel={() => setConfirmDelete(null)}
+          onConfirm={() => {
+            onDelete(confirmDelete.id);
+            setConfirmDelete(null);
+          }}
+        />
+      )}
     </>
   );
 }

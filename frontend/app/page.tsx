@@ -31,9 +31,9 @@ import PlayerBar from "@/components/PlayerBar";
 import SettingsPanel from "@/components/SettingsPanel";
 import TrackEditModal from "@/components/TrackEditModal";
 import PlaylistHeader from "@/components/PlaylistHeader";
-import SeaWave from "@/components/SeaWave";
 import Studio from "@/components/Studio";
 import Discover from "@/components/Discover";
+import NowPlaying from "@/components/NowPlaying";
 import { MenuIcon } from "@/components/Icons";
 
 export default function Home() {
@@ -55,6 +55,11 @@ export default function Home() {
   const [editingTrackId, setEditingTrackId] = useState<string | null>(null);
   const [studioTrackId, setStudioTrackId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [nowPlayingOpen, setNowPlayingOpen] = useState(false);
+  // where each screen was scrolled to, so coming back from Studio (or a playlist)
+  // lands where you left off instead of at the top
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollPos = useRef<Record<string, number>>({});
   // set by Studio while it is open, so the space bar drives its preview
   const studioToggleRef = useRef<(() => void) | null>(null);
   const [shuffle, setShuffle] = useState(false);
@@ -197,6 +202,15 @@ export default function Home() {
     if (offline.online) return new Set<string>();
     return new Set(tracks.filter((t) => !offline.saved.has(audioUrl(t.filename))).map((t) => t.id));
   }, [offline.online, offline.saved, tracks]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTop = scrollPos.current[view] ?? 0;
+  }, [view]);
+
+  const rememberScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    scrollPos.current[view] = e.currentTarget.scrollTop;
+  };
 
   const trackById = useMemo(() => new Map(tracks.map((t) => [t.id, t])), [tracks]);
   const currentTrack = currentId ? (trackById.get(currentId) ?? null) : null;
@@ -574,6 +588,7 @@ export default function Home() {
     if (currentId === trackId) {
       setCurrentId(null);
       setIsPlaying(false);
+      setNowPlayingOpen(false);
     }
     // deleting the track row cascades to playlist_tracks in the DB
     if (user) cloudDeleteTrack(trackId).catch(() => {});
@@ -662,7 +677,7 @@ export default function Home() {
       </header>
 
       <div className="relative flex min-h-0 flex-1">
-      <SeaWave playing={isPlaying} className="pointer-events-none absolute inset-x-0 bottom-0 h-40 w-full" />
+      <div aria-hidden className="pixel-sea pointer-events-none absolute inset-x-0 bottom-0 h-44" />
       <div className="relative mx-auto flex min-h-0 w-full max-w-6xl flex-1">
         <Sidebar
           playlists={playlists}
@@ -708,7 +723,12 @@ export default function Home() {
             </div>
           ) : viewPlaylist ? (
             // Spotify-style playlist view: the banner header scrolls with the list
-            <div key={viewPlaylist.id} className="anim-view flex-1 overflow-y-auto overscroll-contain px-4 pb-6 md:px-8">
+            <div
+              key={viewPlaylist.id}
+              ref={scrollRef}
+              onScroll={rememberScroll}
+              className="anim-view flex-1 overflow-y-auto overscroll-contain px-4 pb-6 md:px-8"
+            >
               <PlaylistHeader
                 playlist={viewPlaylist}
                 tracks={viewTracks}
@@ -754,7 +774,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-6 md:px-8">
+              <div ref={scrollRef} onScroll={rememberScroll} className="flex-1 overflow-y-auto overscroll-contain px-4 pb-6 md:px-8">
                 <TrackList
                   tracks={viewTracks}
                   emptyHint="Paste a YouTube or TikTok link above to download your first track."
@@ -800,7 +820,26 @@ export default function Home() {
         onCycleRepeat={cycleRepeat}
         onToggleShuffle={() => setShuffle((s) => !s)}
         onVolume={setVolume}
+        onExpand={() => currentTrack && setNowPlayingOpen(true)}
       />
+      )}
+
+      {nowPlayingOpen && currentTrack && (
+        <NowPlaying
+          track={currentTrack}
+          isPlaying={isPlaying}
+          position={position}
+          duration={duration}
+          repeat={repeat}
+          shuffle={shuffle}
+          onClose={() => setNowPlayingOpen(false)}
+          onTogglePlay={togglePlay}
+          onPrev={goPrev}
+          onNext={() => goNext(false)}
+          onSeek={handleSeek}
+          onCycleRepeat={cycleRepeat}
+          onToggleShuffle={() => setShuffle((s) => !s)}
+        />
       )}
 
       <audio
