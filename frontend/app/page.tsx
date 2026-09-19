@@ -28,6 +28,7 @@ import PlayerBar from "@/components/PlayerBar";
 import SettingsPanel from "@/components/SettingsPanel";
 import TrackEditModal from "@/components/TrackEditModal";
 import PlaylistHeader from "@/components/PlaylistHeader";
+import SeaWave from "@/components/SeaWave";
 import { MenuIcon } from "@/components/Icons";
 
 export default function Home() {
@@ -537,16 +538,17 @@ export default function Home() {
   };
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden">
+    <div className="relative flex h-dvh flex-col overflow-hidden">
+      <div aria-hidden className="grain pointer-events-none fixed inset-0 z-[60]" />
       <header className="flex shrink-0 items-center gap-3 border-b border-line bg-panel/90 px-4 py-3 backdrop-blur md:hidden">
         <button onClick={() => setSidebarOpen(true)} aria-label="Open menu" className="p-1 text-muted hover:text-ink">
           <MenuIcon />
         </button>
-        <span className="font-pixel text-lg">SoundSea</span>
+        <span className="text-lg font-bold tracking-tight">SoundSea</span>
       </header>
 
       <div className="relative flex min-h-0 flex-1">
-      <div aria-hidden className="sea-pixels pointer-events-none absolute inset-x-0 bottom-0 h-[448px]" />
+      <SeaWave playing={isPlaying} className="pointer-events-none absolute inset-x-0 bottom-0 h-40 w-full" />
       <div className="relative mx-auto flex min-h-0 w-full max-w-6xl flex-1">
         <Sidebar
           playlists={playlists}
@@ -598,8 +600,8 @@ export default function Home() {
               <div className="shrink-0 px-4 pt-5 md:px-8 md:pt-8">
                 <DownloadForm downloading={downloading} error={downloadError} onDownload={handleDownload} />
                 <div className="mt-6 mb-3 flex items-baseline justify-between gap-3">
-                  <h1 className="truncate font-pixel text-2xl">Library</h1>
-                  <span className="shrink-0 font-pixel text-sm text-muted">
+                  <h1 className="truncate text-2xl font-bold tracking-tight">Library</h1>
+                  <span className="shrink-0 text-sm text-muted tabular-nums">
                     {viewTracks.length} {viewTracks.length === 1 ? "track" : "tracks"}
                   </span>
                 </div>

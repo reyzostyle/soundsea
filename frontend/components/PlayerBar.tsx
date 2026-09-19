@@ -129,7 +129,7 @@ export default function PlayerBar({
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2 font-pixel text-[11px] text-muted tabular-nums">
+        <div className="flex items-center gap-2 text-[11px] text-muted tabular-nums">
           <span className="w-10 text-right">{formatTime(position)}</span>
           <input
             type="range"

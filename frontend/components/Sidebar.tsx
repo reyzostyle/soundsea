@@ -108,7 +108,7 @@ export default function Sidebar({
         } ${drag ? "select-none" : ""}`}
       >
         <div className="mb-4 flex items-center justify-between px-2 pt-1 md:hidden">
-          <span className="font-pixel text-xl text-ink">SoundSea</span>
+          <span className="text-lg font-bold tracking-tight text-ink">SoundSea</span>
           <button className="p-1 text-muted hover:text-ink" onClick={onClose} aria-label="Close menu">
             <XIcon />
           </button>
@@ -126,7 +126,7 @@ export default function Sidebar({
         </button>
 
         <div className="mt-5 mb-1 flex items-center justify-between px-3">
-          <span className="font-pixel text-xs tracking-wider text-muted uppercase">Playlists</span>
+          <span className="text-xs font-semibold tracking-wider text-muted uppercase">Playlists</span>
           <button
             className="text-muted hover:text-ink"
             onClick={() => setCreating(true)}
@@ -241,7 +241,7 @@ export default function Sidebar({
             <button
               type="submit"
               disabled={!newName.trim()}
-              className="shrink-0 rounded-md bg-brand p-2 text-white transition-colors enabled:hover:bg-brand-hover disabled:opacity-40"
+              className="shrink-0 rounded-md bg-brand p-2 text-on-brand transition-colors enabled:hover:bg-brand-hover disabled:opacity-40"
               aria-label="Create playlist"
               title="Create"
             >

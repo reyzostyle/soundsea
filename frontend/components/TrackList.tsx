@@ -273,7 +273,7 @@ export default function TrackList({
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className={`truncate text-sm font-medium ${isCurrent ? "text-accent" : "text-ink"}`}>{t.title}</p>
-                  <p className="font-pixel text-xs text-muted">{formatTime(t.duration)}</p>
+                  <p className="text-xs text-muted tabular-nums">{formatTime(t.duration)}</p>
                 </div>
                 <button
                   onClick={(e) => {

@@ -54,7 +54,7 @@ export default function DownloadForm({ downloading, error, onDownload }: Props) 
           type="submit"
           disabled={downloading || !url.trim()}
           aria-label="Download"
-          className="flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full bg-brand text-sm font-semibold text-white transition-colors enabled:hover:bg-brand-hover disabled:opacity-50 sm:w-auto sm:px-4"
+          className="flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full bg-brand text-sm font-semibold text-on-brand transition-colors enabled:hover:bg-brand-hover disabled:opacity-50 sm:w-auto sm:px-4"
         >
           {downloading ? <Spinner className="h-5 w-5" /> : <DownloadIcon className="h-5 w-5" />}
           <span className="hidden sm:inline">{downloading ? "Downloading" : "Download"}</span>

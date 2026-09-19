@@ -92,7 +92,7 @@ export default function TrackEditModal({ track, onClose, onSave }: Props) {
           </button>
           <button
             onClick={save}
-            className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-hover"
+            className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-on-brand transition-colors hover:bg-brand-hover"
           >
             Save
           </button>

@@ -130,7 +130,7 @@ export default function PlaylistHeader({ playlist, tracks, onPlay, onShuffle, on
         <button
           onClick={onPlay}
           disabled={empty}
-          className="flex items-center gap-2 rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition duration-150 enabled:hover:bg-brand-hover enabled:active:scale-[0.97] disabled:opacity-40"
+          className="flex items-center gap-2 rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand transition duration-150 enabled:hover:bg-brand-hover enabled:active:scale-[0.97] disabled:opacity-40"
         >
           <PlayIcon className="h-4 w-4" /> Play
         </button>
@@ -147,7 +147,7 @@ export default function PlaylistHeader({ playlist, tracks, onPlay, onShuffle, on
             <button onClick={cancelEdit} className={`${roundBtn} text-muted hover:bg-elevated hover:text-ink`} aria-label="Cancel" title="Cancel">
               <XIcon className="h-5 w-5" />
             </button>
-            <button onClick={saveEdit} className={`${roundBtn} bg-brand text-white hover:bg-brand-hover`} aria-label="Save" title="Save">
+            <button onClick={saveEdit} className={`${roundBtn} bg-brand text-on-brand hover:bg-brand-hover`} aria-label="Save" title="Save">
               <CheckIcon className="h-5 w-5" />
             </button>
           </>
