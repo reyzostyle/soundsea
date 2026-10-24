@@ -1,3 +1,4 @@
 {
-  "name": "soundsea"
+  "name": "soundsea",
+  "crons": [{ "path": "/api/keepalive", "schedule": "0 6 * * *" }]
 }
