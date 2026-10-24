@@ -37,7 +37,7 @@ import NowPlaying from "@/components/NowPlaying";
 import { MenuIcon } from "@/components/Icons";
 
 export default function Home() {
-  const { user } = useAuth();
+  const { user, ready: authReady, configured: authConfigured } = useAuth();
   const [hydrated, setHydrated] = useState(false);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
@@ -793,7 +793,11 @@ export default function Home() {
               <div ref={scrollRef} onScroll={rememberScroll} className="flex-1 overflow-y-auto overscroll-contain px-4 pb-6 md:px-8">
                 <TrackList
                   tracks={viewTracks}
-                  emptyHint="Paste a YouTube or TikTok link above to add your first track."
+                  emptyHint={
+                    authConfigured && authReady && !user
+                      ? "You're signed out. Sign in from Settings to get your library back."
+                      : "Paste a YouTube or TikTok link above to add your first track."
+                  }
                   currentId={currentId}
                   isPlaying={isPlaying}
                   unavailableIds={unavailableIds}
