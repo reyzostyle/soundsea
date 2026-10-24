@@ -9,7 +9,7 @@
 //   proper 206 slice, so seeking works offline too. Offline, a fade/gap variant falls
 //   back to the plain file.
 
-const SHELL = "soundsea-shell-v1";
+const SHELL = "soundsea-shell-v2";
 const AUDIO = "soundsea-audio-v1";
 const AUDIO_PATH = /\/api\/audio\/[a-f0-9]{16}\.mp3$/;
 

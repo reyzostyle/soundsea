@@ -1,22 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#22d3ee"/>
-      <stop offset="1" stop-color="#2563eb"/>
-    </linearGradient>
-    <path id="s" d="M58,-88 C8,-110 -52,-86 -52,-44 C-52,-2 58,0 58,44 C58,88 0,108 -50,86"
-          fill="none" stroke-width="44" stroke-linecap="round"/>
-    <g id="glyph">
-      <use href="#s" transform="translate(174,312) rotate(-14)"/>
-      <use href="#s" transform="translate(352,198) rotate(-14)"/>
-      <path d="M209,212.6 C242,222 266,246 285,276" fill="none" stroke-width="34" stroke-linecap="round"/>
-      <ellipse cx="132.5" cy="405.2" rx="40" ry="30" stroke="none" transform="rotate(-25 132.5 405.2)"/>
-      <ellipse cx="310.5" cy="291.2" rx="40" ry="30" stroke="none" transform="rotate(-25 310.5 291.2)"/>
-    </g>
-  </defs>
-
-  <rect width="512" height="512" rx="118" fill="url(#bg)"/>
-
-  <use href="#glyph" transform="translate(0,12)" fill="#0b3aa5" stroke="#0b3aa5" opacity="0.22"/>
-  <use href="#glyph" fill="#ffffff" stroke="#ffffff"/>
+  <clipPath id="c"><rect width="512" height="512" rx="58"/></clipPath>
+  <rect width="512" height="512" rx="58" fill="#000"/>
+  <path clip-path="url(#c)" d="M0,176.0 L4,176.4 L8,177.5 L12,179.3 L16,181.8 L20,185.0 L24,188.8 L28,193.3 L32,198.3 L36,203.8 L40,209.8 L44,216.2 L48,222.9 L52,229.9 L56,237.2 L60,244.6 L64,252.0 L68,259.4 L72,266.8 L76,274.1 L80,281.1 L84,287.8 L88,294.2 L92,300.2 L96,305.7 L100,310.7 L104,315.2 L108,319.0 L112,322.2 L116,324.7 L120,326.5 L124,327.6 L128,328.0 L132,327.6 L136,326.5 L140,324.7 L144,322.2 L148,319.0 L152,315.2 L156,310.7 L160,305.7 L164,300.2 L168,294.2 L172,287.8 L176,281.1 L180,274.1 L184,266.8 L188,259.4 L192,252.0 L196,244.6 L200,237.2 L204,229.9 L208,222.9 L212,216.2 L216,209.8 L220,203.8 L224,198.3 L228,193.3 L232,188.8 L236,185.0 L240,181.8 L244,179.3 L248,177.5 L252,176.4 L256,176.0 L260,176.4 L264,177.5 L268,179.3 L272,181.8 L276,185.0 L280,188.8 L284,193.3 L288,198.3 L292,203.8 L296,209.8 L300,216.2 L304,222.9 L308,229.9 L312,237.2 L316,244.6 L320,252.0 L324,259.4 L328,266.8 L332,274.1 L336,281.1 L340,287.8 L344,294.2 L348,300.2 L352,305.7 L356,310.7 L360,315.2 L364,319.0 L368,322.2 L372,324.7 L376,326.5 L380,327.6 L384,328.0 L388,327.6 L392,326.5 L396,324.7 L400,322.2 L404,319.0 L408,315.2 L412,310.7 L416,305.7 L420,300.2 L424,294.2 L428,287.8 L432,281.1 L436,274.1 L440,266.8 L444,259.4 L448,252.0 L452,244.6 L456,237.2 L460,229.9 L464,222.9 L468,216.2 L472,209.8 L476,203.8 L480,198.3 L484,193.3 L488,188.8 L492,185.0 L496,181.8 L500,179.3 L504,177.5 L508,176.4 L512,176.0" fill="none" stroke="#fff" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
